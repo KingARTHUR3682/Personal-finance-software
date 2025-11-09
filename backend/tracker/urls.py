@@ -8,5 +8,5 @@ router.register(r'categories', views.CategoryViewSet, basename='category')
 router.register(r'expenses', views.ExpenseViewSet, basename='expense')
 
 urlpatterns = [
-    path('', inlcude(router.urls))
+    path('', include(router.urls))
 ]
