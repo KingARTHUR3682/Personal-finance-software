@@ -39,11 +39,18 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
 
     "tracker.apps.TrackerConfig",
+
+    'rest_framework',
+    'corsheaders',
 ]
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
+
+    'corsheaders.middleware.CorsMiddleware',
+
+
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
@@ -122,3 +129,24 @@ STATIC_URL = "static/"
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+# --------------------------------------------------
+#  DJANGO REST FRAMEWORK CONFIGURATION
+# --------------------------------------------------
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        # This tells DRF to use JWT for authentication
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ),
+}
+
+# --------------------------------------------------
+#  CORS (Cross-Origin Resource Sharing) CONFIGURATION
+# --------------------------------------------------
+
+# This is the URL your Vue.js app will run on.
+# We are telling the backend to "trust" it.
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:5173",
+]
