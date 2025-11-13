@@ -54,7 +54,7 @@ const handleLogin = () => {
 
 button {
     padding: 10px 15px;
-    background-color: #42b983;
+    background-color: #4991de;
     color: white;
     border: none;
     border-radius: 4px;
