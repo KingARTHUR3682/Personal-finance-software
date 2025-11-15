@@ -1,13 +1,38 @@
 <script setup>
 import { ref } from 'vue'
+import axios from 'axios'
+import { useRouter } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
 
-// Create "reactive" variables for the from fields
+// Get the Pinia store and the Vue router
+const authStore = useAuthStore()
+const router = useRouter()
+
+// Create reactive varuables for the form fields
 const username = ref('')
 const password = ref('')
+const errorMessage = ref('') // to show login errors
 
-// Function to handle the form submission
-const handleLogin = () => {
-    console.log('Logging in with:', username.value, password.value)
+// -- Function --
+const handleLogin = async () => {
+    try {
+        // Make the API call to Django backend
+        const response = await axios.post('http://127.0.0.1:8000/api/token/', {
+            username: username.value,
+            password: password.value
+        })
+
+        // Get the access token from the response
+        const accessToken = response.data.accessToken
+        
+        // Save the token in Pinia store
+        authStore.setToken(accessToken)
+
+        router.push('/')
+    } catch (error) {
+        console.error('Error logging in:', error)
+        errorMessage.value = 'Failed to login. Please check your username and password.'
+    }
 }
 </script>
 
@@ -24,17 +49,27 @@ const handleLogin = () => {
                 <input type="password" id="password" v-model="password"/>
             </div>
             <button type="submit">Login</button>
+            <p v-if="errorMessage" class="error-message">
+                {{ errorMessage }}
+            </p>
         </form>
     </div>
 </template>
 
 <style scoped>
 .login-page {
-    max-width: 400px;
-    margin: 50px auto;
+    max-width: 100%;
+    margin-bottom: 20px;
     padding: 20px;
     border: 1px solid #ccc;
     border-radius: 8px;
+    align-items: center;
+    justify-content: center;
+
+}
+
+.login-page h2 {
+    margin-bottom: 5px;
 }
 
 .form-group {
@@ -59,5 +94,10 @@ button {
     border: none;
     border-radius: 4px;
     cursor: pointer;
+}
+
+.error-message {
+    color: red;
+    font-size: 0.9em;
 }
 </style>
