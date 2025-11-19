@@ -17,7 +17,7 @@ const errorMessage = ref('') // to show login errors
 const handleLogin = async () => {
     try {
         // Make the API call to Django backend
-        const response = await axios.post('http://127.0.0.1:8000/api/token/', {
+        const response = await axios.post('http://192.168.100.40:8000/api/token/', {
             username: username.value,
             password: password.value
         })

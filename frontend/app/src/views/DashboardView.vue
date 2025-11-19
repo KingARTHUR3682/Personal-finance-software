@@ -2,10 +2,12 @@
 import { ref, onMounted } from 'vue'
 import axios from 'axios'
 import { useAuthStore } from '@/stores/auth'
+import ExpenseForm from '@/components/ExpenseForm.vue'
 
 const authStore = useAuthStore()
 const expenses = ref([])
 const loading = ref(false)
+const showForm = ref(false)
 
 onMounted(async () => {
     await fetchExpenses()
@@ -14,7 +16,7 @@ onMounted(async () => {
 const fetchExpenses = async () => {
     loading.value = true
     try {
-        const response = await axios.get('http://127.0.0.1:8000/api/expenses/', {
+        const response = await axios.get('http://192.168.100.40:8000/api/expenses/', {
             headers: {
                 Authorization: `Bearer ${authStore.token}`
             }
@@ -27,11 +29,29 @@ const fetchExpenses = async () => {
         loading.value = false
     }
 }
+
+const onExpenseAdded = () => {
+    showForm.value = false // Close the form modal
+    fetchExpenses() // Refresh the page
+}
 </script>
 
 <template>
+    
     <div class="dashboard">
         <h2>My Expenses</h2>
+
+        <button class="fab" @click="showForm = true">
+            + Add
+        </button>
+
+        <div v-if="showForm" class="modal-overlay" @click.self="showForm = false">
+            <div class="modal-content">
+                <button class="close-btn" @click="showForm = false">&times;</button>
+
+                <ExpenseForm @expense-added="onExpenseAdded" />
+            </div>
+        </div>
 
         <div v-if="loading" class="loading">Loding...</div>
 
@@ -54,7 +74,9 @@ const fetchExpenses = async () => {
 
 <style scoped>
 .dashboard {
-    padding-bottom: 60px
+    padding-bottom: 80px;
+    position: relative;
+    min-height: 100%;
 }
 
 h2 {
@@ -62,6 +84,75 @@ h2 {
     text-align: center;
 }
 
+/* --- Floating Action Button (FAB) --- */
+.fab {
+    position: fixed;
+    bottom: 80px;
+    right: 20px;
+    background-color: #42b983;
+    color: white;
+    border: none;
+    border-radius: 50px;
+    padding: 15px 25px;
+    font-size: 1rem;
+    font-weight: bold;
+    box-shadow: 0 4px 10px rgba(66, 185, 131, 0.4);
+    cursor: pointer;
+    z-index: 100;
+    transition: transfrom 0.2s;
+}
+
+.fab:active{
+    transform: scale(0.95);
+}
+
+/* --- Model Styles --- */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7); /* Dark semi-transparent background */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000; /* Very high z-index to sit on top of everything */
+    backdrop-filter: blur(3px); /* Nice blur effect */
+}
+
+.modal-content {
+    position: relative;
+    width: 90%;
+    max-width: 400px;
+    animation: slideUp 0.3s ease-out;
+}
+
+/* Simple animation to make the modal slide up */
+@keyframes slideUp {
+    from { transform: translateY(20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+.close-btn {
+    position: absolute;
+    top: -10px;
+    right: -10px;
+    background: #ff4d4d;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    font-size: 1.2rem;
+    cursor: pointer;
+    z-index: 1001;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* --- Lists Styles --- */
 .expense-list {
     list-style: none;
     padding: 0;
