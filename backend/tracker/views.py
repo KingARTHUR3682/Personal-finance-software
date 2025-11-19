@@ -53,7 +53,7 @@ class ExpenseViewSet(viewsets.ModelViewSet):
         """This view should return a list of all expenses for the currently authenticated user"""
         return Expense.objects.filter(user=self.request.user)
 
-    def perfrom_create(self, serializer):
+    def perform_create(self, serializer):
         """Automatically assign the new create expense to the currently authenticated user"""
 
         serializer.save(user=self.request.user)
