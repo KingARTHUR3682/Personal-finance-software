@@ -28,11 +28,6 @@ const handleLogout = () => {
 </template>
 
 <style scoped>
-main {
-  max-width: 800px;
-  margin: 50px auto;
-  padding: 20px;
-}
 button {
   padding: 10px 15px;
   background-color: #e63946; /* A red color */

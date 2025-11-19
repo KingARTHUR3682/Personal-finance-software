@@ -57,16 +57,7 @@ const handleLogin = async () => {
 </template>
 
 <style scoped>
-.login-page {
-    max-width: 100%;
-    margin-bottom: 20px;
-    padding: 20px;
-    border: 1px solid #ccc;
-    border-radius: 8px;
-    align-items: center;
-    justify-content: center;
 
-}
 
 .login-page h2 {
     margin-bottom: 5px;
