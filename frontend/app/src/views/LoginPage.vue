@@ -23,7 +23,7 @@ const handleLogin = async () => {
         })
 
         // Get the access token from the response
-        const accessToken = response.data.accessToken
+        const accessToken = response.data.access
         
         // Save the token in Pinia store
         authStore.setToken(accessToken)
