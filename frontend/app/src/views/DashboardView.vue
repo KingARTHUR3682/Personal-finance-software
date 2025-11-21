@@ -12,7 +12,7 @@ const showForm = ref(false)
 const expenseToEdit = ref('')
 
 const openAddModal = () => {
-    expenseToEdit.value = null // Clear foe Add Mode
+    expenseToEdit.value = null // Clear for Add Mode
     showForm.value = true
 }
 
