@@ -34,6 +34,23 @@ const onExpenseAdded = () => {
     showForm.value = false // Close the form modal
     fetchExpenses() // Refresh the page
 }
+
+const deleteExepense = async (id) => {
+    if (!confirm('Are you sure you want to delete this expense?')) return
+
+    try {
+        await axios.delete(`http://192.168.100.40:8000/api/expenses/${id}/`, {
+            headers: {
+                Authorization: `Bearer ${authStore.token}`
+            }
+        })
+
+        await fetchExpenses()
+    } catch(error) {
+        console.error("Error deleting expense: ", error)
+        alert("Failed to delete expense.")
+    }
+}
 </script>
 
 <template>
@@ -66,7 +83,10 @@ const onExpenseAdded = () => {
                     <span class="expense-name">{{ expense.name }}</span>
                     <span class="expense-date">{{ expense.date }}</span>
                 </div>
-                <span class="expense-amount">RM {{ expense.amount }}</span>
+                <div class="expense-actions">
+                    <span class="expense-amount">RM {{ expense.amount }}</span>
+                    <button @click="deleteExepense(expense.id)" class="delete-btn">&times;</button>
+                </div>      
             </li>
         </ul>
     </div>
@@ -104,6 +124,35 @@ h2 {
 
 .fab:active{
     transform: scale(0.95);
+}
+
+/* --- Action --- */
+.expense-actions {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+/* Style the Delete Button */
+.delete-btn {
+    background-color: #ff4d4d;
+    color: white;
+    border: none;
+    border-radius: 50%; /* Makes it a perfect circle */
+    width: 30px;
+    height: 30px;
+    font-size: 1.5rem;
+    line-height: 1; /* Centers the '×' */
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    transition: background-color 0.2s;
+}
+
+.delete-btn:hover {
+    background-color: #cc0000;
 }
 
 /* --- Model Styles --- */
@@ -160,14 +209,14 @@ h2 {
 
 .expense-item {
     background: #2c2c2e;
-  color: white;
-  margin-bottom: 10px;
-  padding: 15px;
-  border-radius: 12px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    color: white;
+    margin-bottom: 10px;
+    padding: 15px;
+    border-radius: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
 }
 
 .expense-info {
