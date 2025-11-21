@@ -9,7 +9,7 @@ const expenses = ref([])
 const loading = ref(false)
 const showForm = ref(false)
 
-const expenseToEdit = ref('')
+const expenseToEdit = ref(null)
 
 const openAddModal = () => {
     expenseToEdit.value = null // Clear for Add Mode
