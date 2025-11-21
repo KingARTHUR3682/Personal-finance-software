@@ -152,3 +152,7 @@ CORS_ALLOWED_ORIGINS = [
     "http://192.168.100.40:5173",
     "http://192.168.100.39:5173",
 ]
+
+import os
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
