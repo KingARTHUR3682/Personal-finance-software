@@ -1,7 +1,14 @@
 <script setup>
 import axios from 'axios';
-import { ref } from 'vue';
+import { ref, watch } from 'vue';
 import { useAuthStore } from '@/stores/auth';
+
+const props = defineProps({
+  expense: {
+    type: Object,
+    default: null
+  }
+})
 
 const emit = defineEmits(['expense-added'])
 
@@ -13,33 +20,50 @@ const name = ref('')
 const amount = ref('')
 const date = ref('')
 
+watch(() => props.expense, (newExpense) => {
+  if (newExpense) {
+    // Edit mode: Fill the form
+    name.value = newExpense.name
+    amount.value = newExpense.amount
+    date.value = newExpense.date
+  } else {
+    // Create mode: Clear the form
+    name.value = ''
+    amount.value = ''
+    date.value = ''
+  }
+}, {immediate: true})
+
 const handleSubmit = async () => {
-    loading.value = true
-    errorMessage.value = ''
-    try {
-        await axios.post('http://192.168.100.40:8000/api/expenses/', {
-            name: name.value,
-            amount: amount.value,
-            date: date.value
-        }, {
-            headers: {
-                Authorization: `Bearer ${authStore.token}`
-            }
-        })
+  loading.value = true
+  errorMessage.value = ''
+  try {
+      const headers = {Authorization: `Bearer ${authStore.token}`}
+      const data = {
+        name: name.value,
+        amount: amount.value,
+        date: date.value
+      }
 
-        // Clear the form
-        name.value = ''
-        amount.value = ''
-        date.value = ''
+      if (props.expense) {
+        // --- Edit mode (PUT) ---
+        // Use the ID from prop
+        await axios.put(`http://192.168.100.39:8000/api/expenses/${props.expense.id}/`, data, { headers })
+      } else {
+        // --- Create mode (POST) ---
+        await axios.post('http://192.168.100.39:8000/api/expenses/', data, { headers })
+      }
 
-        // Tell the parent components to refresh the list
-        emit('expense-added')
-    } catch(error) {
-        console.error("Error adding expense: ", error)
-        errorMessage.value = "Failed to add expense."
-    } finally {
-        loading.value = true
-    }
+      name.value = ''
+      amount.value = ''
+      date.value = ''
+      emit('saved')
+  } catch(error) {
+    console.error("Error saving expense: ", error)
+    errorMessage.value = "Failed to save expense."
+  } finally {
+    loading.value = false
+  }
 }
 </script>
 
@@ -66,7 +90,7 @@ const handleSubmit = async () => {
       </div>
 
       <button type="submit" :disabled="loading">
-        {{ loading ? 'Adding...' : 'Add Expense' }}
+        {{ loading ? 'Saving...' : (expense ? 'Update Expense' : 'Add Expense') }}
       </button>
 
       <p v-if="errorMessage" class="error">{{ errorMessage }}</p>

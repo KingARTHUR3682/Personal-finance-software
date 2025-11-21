@@ -9,6 +9,23 @@ const expenses = ref([])
 const loading = ref(false)
 const showForm = ref(false)
 
+const expenseToEdit = ref('')
+
+const openAddModal = () => {
+    expenseToEdit.value = null // Clear foe Add Mode
+    showForm.value = true
+}
+
+const openEditModal = (expense) => {
+    expenseToEdit.value = expense
+    showForm.value = true
+}
+
+const onExpenseSaved = () => {
+    showForm.value = false
+    fetchExpenses()
+}
+
 onMounted(async () => {
     await fetchExpenses()
 })
@@ -28,11 +45,6 @@ const fetchExpenses = async () => {
     } finally {
         loading.value = false
     }
-}
-
-const onExpenseAdded = () => {
-    showForm.value = false // Close the form modal
-    fetchExpenses() // Refresh the page
 }
 
 const deleteExepense = async (id) => {
@@ -58,7 +70,7 @@ const deleteExepense = async (id) => {
     <div class="dashboard">
         <h2>My Expenses</h2>
 
-        <button class="fab" @click="showForm = true">
+        <button class="fab" @click="openAddModal = true">
             + Add
         </button>
 
@@ -66,7 +78,7 @@ const deleteExepense = async (id) => {
             <div class="modal-content">
                 <button class="close-btn" @click="showForm = false">&times;</button>
 
-                <ExpenseForm @expense-added="onExpenseAdded" />
+                <ExpenseForm :expense="expenseToEdit" @saved="onExpenseSaved" />
             </div>
         </div>
 
@@ -85,7 +97,8 @@ const deleteExepense = async (id) => {
                 </div>
                 <div class="expense-actions">
                     <span class="expense-amount">RM {{ expense.amount }}</span>
-                    <button @click="deleteExepense(expense.id)" class="delete-btn">&times;</button>
+                    <button @click="openEditModal(expense)" class="icon-btn edit-btn">✎</button>
+                    <button @click="deleteExepense(expense.id)" class="icon-btn delete-btn">&times;</button>
                 </div>      
             </li>
         </ul>
@@ -133,22 +146,33 @@ h2 {
     gap: 15px;
 }
 
-/* Style the Delete Button */
-.delete-btn {
-    background-color: #ff4d4d;
-    color: white;
-    border: none;
-    border-radius: 50%; /* Makes it a perfect circle */
+/* Style Button */
+.icon-btn {
     width: 30px;
     height: 30px;
-    font-size: 1.5rem;
-    line-height: 1; /* Centers the '×' */
+    border-radius: 50%;
+    border: none;
+    color: white;
+    font-size: 1.2rem;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 0;
-    transition: background-color 0.2s;
+    line-height: 1;
+}
+
+.edit-btn {
+    background-color: #eea838;
+    margin-right: 5px;
+    font-size: 1rem;
+}
+
+.edit-btn:hover {
+    background-color: #f39c12;
+}
+
+.delete-btn {
+    background-color: #ff4d4d;
 }
 
 .delete-btn:hover {
