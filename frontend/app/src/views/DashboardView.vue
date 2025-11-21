@@ -70,7 +70,7 @@ const deleteExepense = async (id) => {
     <div class="dashboard">
         <h2>My Expenses</h2>
 
-        <button class="fab" @click="openAddModal = true">
+        <button class="fab" @click="openAddModal">
             + Add
         </button>
 
