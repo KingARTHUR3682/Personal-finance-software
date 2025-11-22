@@ -102,6 +102,7 @@ const filteredList = computed(() => {
         else if (filterType.value === 'custom') {
             const start = new Date(customStart.value)
             const end = new Date(customEnd.value)
+            start.setHours(0,0,0,0)
             end.setHours(23,59,59,999)
             return expDate >= start && expDate <= end
         }
