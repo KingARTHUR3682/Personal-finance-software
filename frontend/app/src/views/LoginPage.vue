@@ -52,6 +52,9 @@ const handleLogin = async () => {
             <p v-if="errorMessage" class="error-message">
                 {{ errorMessage }}
             </p>
+            <p class="switch-link">
+                New user? <router-link to="/register">Create an Account</router-link>
+            </p>
         </form>
     </div>
 </template>
@@ -90,5 +93,10 @@ button {
 .error-message {
     color: red;
     font-size: 0.9em;
+}
+
+.switch-link a { 
+    color: #42b983; 
+    text-decoration: none; 
 }
 </style>

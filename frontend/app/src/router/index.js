@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import LoginPage from '../views/LoginPage.vue'
 import DashboardView from '../views/DashboardView.vue'
+import RegisterPage from '../views/RegisterPage.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -23,12 +24,17 @@ const router = createRouter({
       name: 'home',
       component: DashboardView,
       meta: {requiresAuth: true}
-    }
+    },
+    {
+      path: '/register',
+      name: 'register',
+      component: RegisterPage
+    },
   ],
 })
 
 router.beforeEach((to, from, next) => {
-    const publicPages = ['/login']
+    const publicPages = ['/login', '/register']
     const authRequired = !publicPages.includes(to.path)
     const loggedIn = localStorage.getItem('access_token')
 
