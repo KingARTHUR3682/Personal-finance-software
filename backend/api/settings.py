@@ -28,7 +28,7 @@ DEBUG = False
 ALLOWED_HOSTS = ['haak.dpdns.org','haak-pfs-backend.onrender.com', 'localhost', '127.0.0.1', '192.168.100.40', '192.168.100.39']
 
 CSRF_TRUSTED_ORIGINS = [
-    "http://haak.dpdns.org",
+    "https://haak.dpdns.org",
     "https://haak-pfs.arthurkbx.workers.dev",
 ]
 
@@ -157,7 +157,7 @@ REST_FRAMEWORK = {
 # We are telling the backend to "trust" it.
 CORS_ALLOWED_ORIGINS = [
     "https://haak-pfs.arthurkbx.workers.dev",
-    "http://haak.dpdns.org",
+    "https://haak.dpdns.org",
     "http://localhost:5173",
     "http://192.168.100.40:5173",
     "http://192.168.100.39:5173",
