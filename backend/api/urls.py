@@ -23,6 +23,7 @@ from rest_framework_simplejwt.views import (
     TokenObtainPairView,
     TokenRefreshView,
 )
+from tracker.views import RequestPasswordResetEmail, PasswordResetConfirmView # Import the new views
 
 urlpatterns = [
     path("admin/", admin.site.urls),
@@ -34,8 +35,11 @@ urlpatterns = [
     path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
 
-    # This is for reset password
-    path('api/auth/', include('django.contrib.auth.urls')),
+    # 1. Request the link
+    path('api/auth/password_reset/', RequestPasswordResetEmail.as_view(), name='password_reset_request'),
+    
+    # 2. Confirm/Set new password (Must match the URL structure your Vue app sends)
+    path('api/auth/reset/<uidb64>/<token>/', PasswordResetConfirmView.as_view(), name='password_reset_confirm'),
 ]
 
 if settings.DEBUG:
