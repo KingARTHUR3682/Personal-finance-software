@@ -9,6 +9,12 @@ const emit = defineEmits(['saved', 'close']) // Add 'close' emit
 const router = useRouter()
 const authStore = useAuthStore()
 
+const picker = ref(null)
+
+const openPicker = () => {
+    picker.value.showPicker()
+}
+
 // --- Data ---
 const categories = ref([])
 const transactionType = ref('expense') 
@@ -21,6 +27,13 @@ const description = ref('')
 const date = ref(new Date().toISOString().split('T')[0])
 const receiptFile = ref(null)
 const fileInput = ref(null)
+
+const dateLabel = computed(() => {
+    const today = new Date().toISOString().split('T')[0]
+    if (date.value === today) return 'Today'
+
+    return date.value
+})
 
 // --- Loading Data ---
 onMounted(async () => {
@@ -163,9 +176,10 @@ const goToAddCategory = () => router.push('/category/add')
                     {{ receiptFile ? '📷' : '🖼️' }}
                 </button>
                 <input type="file" ref="fileInput" hidden @change="onFileChange" accept="image/*">
-                <div class="date-btn-wrapper">
-                    <input type="date" v-model="date" class="hidden-date" />
-                    <button class="date-btn">Today</button>
+                <div class="date-btn-wrapper" @click="openPicker">
+                    <button class="date-btn">{{ dateLabel }}</button>
+                    
+                    <input ref="picker" type="date" v-model="date" class="hidden-date" />
                 </div>
                 <button class="submit-btn" @click="handleSubmit">OK</button>
             </div>
@@ -246,8 +260,8 @@ const goToAddCategory = () => router.push('/category/add')
 .action-pad { flex: 1; display: flex; flex-direction: column; }
 .action-pad > button, .date-btn-wrapper { flex: 1; width: 100%; border: none; display: flex; align-items: center; justify-content: center; cursor: pointer; font-weight: bold; }
 .img-btn { background: white; font-size: 1.2rem; border-bottom: 1px solid #eee !important; }
-.date-btn-wrapper { position: relative; background: #42b983; color: white; }
+.date-btn-wrapper { position: relative; background: #42b983; color: white; overflow: hidden; }
 .date-btn { background: transparent; border: none; color: white; font-weight: bold; width: 100%; height: 100%; }
-.hidden-date { position: absolute; opacity: 0; width: 100%; height: 100%; cursor: pointer; }
+.hidden-date { position: absolute; opacity: 0; width: 100%; height: 100%; cursor: pointer; top: 0; left: 0; z-index: 10; }
 .submit-btn { background: #4991de; color: white; flex: 1.5 !important; }
 </style>
