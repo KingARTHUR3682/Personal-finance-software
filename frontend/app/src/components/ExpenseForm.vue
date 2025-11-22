@@ -17,6 +17,14 @@ const authStore = useAuthStore()
 const loading = ref(false)
 const errorMessage = ref('')
 
+const resetForm = () => {
+    transactionType.value = 'expense'
+    selectedCategoryId.value = null
+    description.value = ''
+    amount.value = ''
+    date.value = new Date().toISOString().split('T')[0]
+}
+
 // --- Form Data ---
 const transactionType = ref('expense')
 const selectedCategoryId = ref(null)
@@ -38,13 +46,6 @@ watch(() => props.expense, (newExpense) => {
   }
 }, {immediate: true})
 
-const resetForm = () => {
-    transactionType.value = 'expense'
-    selectedCategoryId.value = null
-    description.value = ''
-    amount.value = ''
-    date.value = new Date().toISOString().split('T')[0]
-}
 
 const handleSubmit = async () => {
   if (!selectedCategoryId.value) {
@@ -67,10 +68,10 @@ const handleSubmit = async () => {
       if (props.expense) {
         // --- Edit mode (PUT) ---
         // Use the ID from prop
-        await axios.put(`http://192.168.100.39:8000/api/expenses/${props.expense.id}/`, data, { headers })
+        await axios.put(`http://192.168.100.40:8000/api/expenses/${props.expense.id}/`, data, { headers })
       } else {
         // --- Create mode (POST) ---
-        await axios.post('http://192.168.100.39:8000/api/expenses/', data, { headers })
+        await axios.post('http://192.168.100.40:8000/api/expenses/', data, { headers })
       }
 
       resetForm()

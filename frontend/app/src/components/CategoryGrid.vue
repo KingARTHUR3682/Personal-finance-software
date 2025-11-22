@@ -100,6 +100,7 @@ const selectCategory = (category) => {
   cursor: pointer;
   aspect-ratio: 1; /* Keeps them square */
   transition: all 0.2s;
+  color: white;
 }
 
 .category-item.active {
