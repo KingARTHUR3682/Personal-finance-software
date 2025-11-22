@@ -2,6 +2,8 @@ import { createRouter, createWebHistory } from 'vue-router'
 import LoginPage from '../views/LoginPage.vue'
 import DashboardView from '../views/DashboardView.vue'
 import RegisterPage from '../views/RegisterPage.vue'
+import ExpenseDetailView from '@/views/ExpenseDetailView.vue'
+import ProfileView from '@/views/ProfileView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -29,6 +31,18 @@ const router = createRouter({
       path: '/register',
       name: 'register',
       component: RegisterPage
+    },
+    {
+      path: '/expense/:id',
+      name: 'expense-detail',
+      component: ExpenseDetailView,
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/profile/:id',
+      name: 'profile',
+      component: ProfileView,
+      meta: { requiresAuth: true }
     },
   ],
 })
