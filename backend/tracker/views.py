@@ -19,7 +19,7 @@ from rest_framework import status
 
 class UserRegistrationViewSet(viewsets.ModelViewSet):
     """API endpoint that allows users to be registered"""
-    query_set = User.objects.all()
+    queryset = User.objects.all()
     serializer_class = UserRegistrationSerializer
 
     # Set permission to AllowAny, so anyone (include unauthenticated users) can create a new account
