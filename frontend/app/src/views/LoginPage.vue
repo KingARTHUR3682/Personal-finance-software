@@ -64,6 +64,10 @@ const handleLogin = async () => {
                     />
                 </div>
 
+                <div class="input-group forgot-password-link">
+                    <router-link to="/forgot-password" class="link">Forgot Password?</router-link>
+                </div>
+
                 <button type="submit" class="submit-btn" :disabled="loading">
                     {{ loading ? 'Signing In...' : 'Log In' }}
                 </button>
@@ -200,5 +204,10 @@ const handleLogin = async () => {
 
 .footer .link:hover {
     text-decoration: underline;
+}
+
+.forgot-password-link {
+    text-align: right;
+    margin-top: -10px;
 }
 </style>

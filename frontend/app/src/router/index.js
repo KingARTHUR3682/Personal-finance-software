@@ -5,6 +5,8 @@ import RegisterPage from '../views/RegisterPage.vue'
 import ExpenseDetailView from '@/views/ExpenseDetailView.vue'
 import ProfileView from '@/views/ProfileView.vue'
 import AddCategoryView from '@/views/AddCategoryView.vue'
+import ForgotPasswordRequest from '@/views/ForgotPasswordRequest.vue'
+import PasswordResetConfirm from '@/views/PasswordResetConfirm.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -21,6 +23,17 @@ const router = createRouter({
       path: '/login',
       name: 'login',
       component: LoginPage
+    },
+    {
+      path: '/forgot-password',
+      name: 'forgot-password-request',
+      component: ForgotPasswordRequest,
+    },
+    {
+      // This route captures the uidb64 and token from the email link
+      path: '/reset-password/:uidb64/:token',
+      name: 'password-reset-confirm',
+      component: PasswordResetConfirm,
     },
     {
       path: '/',
