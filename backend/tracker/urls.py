@@ -8,5 +8,6 @@ router.register(r'categories', views.CategoryViewSet, basename='category')
 router.register(r'expenses', views.ExpenseViewSet, basename='expense')
 
 urlpatterns = [
-    path('', include(router.urls))
+    path('', include(router.urls)),
+    path('profile/', views.UserProfileView.as_view(), name='user-profile'),
 ]

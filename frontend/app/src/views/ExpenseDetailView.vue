@@ -3,6 +3,7 @@ import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import axios from 'axios'
 import { useAuthStore } from '@/stores/auth'
+import ExpenseForm from '@/components/ExpenseForm.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -10,9 +11,10 @@ const authStore = useAuthStore()
 
 const expense = ref(null)
 const loading = ref(true)
+const showEditModal = ref(false) // State to control the edit modal
 
-// Fetch specific expense data
-onMounted(async () => {
+// Encapsulate fetch in a function
+const fetchExpenseDetails = async () => {
   const id = route.params.id
   try {
     const response = await axios.get(`http://192.168.100.40:8000/api/expenses/${id}/`, {
@@ -26,7 +28,9 @@ onMounted(async () => {
   } finally {
     loading.value = false
   }
-})
+}
+
+onMounted(fetchExpenseDetails)
 
 const deleteExpense = async () => {
   if (!confirm("Delete this record?")) return
@@ -49,7 +53,8 @@ const goBack = () => router.push('/')
     <div class="header">
       <button @click="goBack" class="back-btn">&lt;</button>
       <h3>Details</h3>
-      <div style="width: 20px"></div> </div>
+      <div style="width: 20px"></div> 
+    </div>
 
     <div class="content">
       <div class="main-info">
@@ -80,10 +85,21 @@ const goBack = () => router.push('/')
       </div>
 
       <div class="actions">
-        <button class="action-btn edit">Edit</button>
+        <button class="action-btn edit" @click="showEditModal = true">Edit</button>
         <button class="action-btn delete" @click="deleteExpense">Delete</button>
       </div>
     </div>
+
+    <div v-if="showEditModal" class="modal-overlay" @click.self="showEditModal = false">
+        <div class="modal-content">
+            <ExpenseForm 
+                :expense="expense" 
+                @saved="() => { showEditModal = false; fetchExpenseDetails() }" 
+                @close="showEditModal = false"
+            />
+        </div>
+    </div>
+
   </div>
   <div v-else-if="loading" class="loading">Loading...</div>
 </template>
@@ -92,7 +108,7 @@ const goBack = () => router.push('/')
 .detail-page { background: white; min-height: 100vh; display: flex; flex-direction: column; }
 .header { display: flex; align-items: center; justify-content: space-between; padding: 15px; background: #f9f9f9; }
 .back-btn { background: none; border: none; font-size: 1.5rem; cursor: pointer; }
-.content { padding: 20px; display: flex; flex-direction: column; gap: 20px; }
+.content { padding: 20px; display: flex; flex-direction: column; gap: 20px; flex: 1;}
 
 .main-info { text-align: center; margin-bottom: 20px; }
 .big-icon { font-size: 3rem; margin-bottom: 10px; }
@@ -107,8 +123,41 @@ const goBack = () => router.push('/')
 
 .receipt-container img { width: 100%; border-radius: 12px; margin-top: 10px; }
 
-.actions { display: flex; gap: 15px; margin-top: auto; padding-top: 20px; }
+.actions { 
+    display: flex; 
+    gap: 15px; 
+    margin-top: auto; 
+    padding-top: 20px; 
+    margin-bottom: 100px;
+}
+
 .action-btn { flex: 1; padding: 15px; border: none; border-radius: 30px; font-weight: bold; cursor: pointer; font-size: 1rem; }
 .edit { background: #eee; color: #333; }
 .delete { background: #ff4d4d; color: white; }
+
+/* Modal Styles */
+.modal-overlay { 
+    position: fixed; 
+    top: 0; 
+    left: 0; 
+    width: 100%; 
+    height: 100%; 
+    background: rgba(0,0,0,0.05); 
+    z-index: 2000; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    backdrop-filter: blur(1px);
+}
+
+.modal-content { 
+    background: #2c2c2e; 
+    width: 95%; 
+    max-width: 420px; 
+    padding: 0; 
+    border-radius: 20px; 
+    position: relative; 
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    overflow: hidden;
+}
 </style>

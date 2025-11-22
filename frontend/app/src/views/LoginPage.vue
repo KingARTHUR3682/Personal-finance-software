@@ -4,99 +4,201 @@ import axios from 'axios'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 
-// Get the Pinia store and the Vue router
 const authStore = useAuthStore()
 const router = useRouter()
 
-// Create reactive varuables for the form fields
 const username = ref('')
 const password = ref('')
-const errorMessage = ref('') // to show login errors
+const errorMessage = ref('')
+const loading = ref(false)
 
-// -- Function --
 const handleLogin = async () => {
+    loading.value = true
+    errorMessage.value = ''
     try {
-        // Make the API call to Django backend
         const response = await axios.post('http://192.168.100.40:8000/api/token/', {
             username: username.value,
             password: password.value
         })
 
-        // Get the access token from the response
         const accessToken = response.data.access
-        
-        // Save the token in Pinia store
         authStore.setToken(accessToken)
-
         router.push('/')
     } catch (error) {
         console.error('Error logging in:', error)
-        errorMessage.value = 'Failed to login. Please check your username and password.'
+        errorMessage.value = 'Invalid username or password.'
+    } finally {
+        loading.value = false
     }
 }
 </script>
 
 <template>
-    <div class="login-page">
-        <h2>Login</h2>
-        <form @submit.prevent="handleLogin">
-            <div class="form-group">
-                <label for="username">Username:</label>
-                <input type="text" id="username" v-model="username" />
+    <div class="auth-container">
+        <div class="auth-card">
+            <div class="header">
+                <h1>Welcome Back</h1>
+                <p>Please sign in to your account</p>
             </div>
-            <div class="form-group">
-                <label for="password">Password:</label>
-                <input type="password" id="password" v-model="password"/>
+
+            <form @submit.prevent="handleLogin" class="auth-form">
+                <div class="input-group">
+                    <label for="username">Username</label>
+                    <input 
+                        type="text" 
+                        id="username" 
+                        v-model="username" 
+                        placeholder="Enter your username"
+                        required 
+                    />
+                </div>
+
+                <div class="input-group">
+                    <label for="password">Password</label>
+                    <input 
+                        type="password" 
+                        id="password" 
+                        v-model="password" 
+                        placeholder="Enter your password"
+                        required
+                    />
+                </div>
+
+                <button type="submit" class="submit-btn" :disabled="loading">
+                    {{ loading ? 'Signing In...' : 'Log In' }}
+                </button>
+
+                <p v-if="errorMessage" class="error-message">
+                    {{ errorMessage }}
+                </p>
+            </form>
+
+            <div class="footer">
+                <p>Don't have an account?</p>
+                <router-link to="/register" class="link">Create Account</router-link>
             </div>
-            <button type="submit">Login</button>
-            <p v-if="errorMessage" class="error-message">
-                {{ errorMessage }}
-            </p>
-            <p class="switch-link">
-                New user? <router-link to="/register">Create an Account</router-link>
-            </p>
-        </form>
+        </div>
     </div>
 </template>
 
 <style scoped>
-
-
-.login-page h2 {
-    margin-bottom: 5px;
+.auth-container {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #f5f5f5;
+    padding: 20px;
 }
 
-.form-group {
-    margin-bottom: 15px;
-}
-
-.form-group label {
-    display: block;
-    margin-bottom: 5px;
-}
-
-.form-group input {
+.auth-card {
+    background: white;
     width: 100%;
-    padding: 8px;
-    box-sizing: border-box;
+    max-width: 400px;
+    padding: 40px 30px;
+    border-radius: 24px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.05);
 }
 
-button {
-    padding: 10px 15px;
+.header {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.header h1 {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: #333;
+    margin-bottom: 8px;
+}
+
+.header p {
+    color: #888;
+    font-size: 0.95rem;
+}
+
+.auth-form {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.input-group label {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #555;
+    margin-left: 4px;
+}
+
+.input-group input {
+    width: 100%;
+    padding: 14px 16px;
+    background-color: #f9f9f9;
+    border: 1px solid #eee;
+    border-radius: 12px;
+    font-size: 1rem;
+    transition: all 0.2s;
+    outline: none;
+}
+
+.input-group input:focus {
+    background-color: white;
+    border-color: #4991de;
+    box-shadow: 0 0 0 3px rgba(73, 145, 222, 0.1);
+}
+
+.submit-btn {
+    margin-top: 10px;
+    padding: 16px;
     background-color: #4991de;
     color: white;
     border: none;
-    border-radius: 4px;
+    border-radius: 12px;
+    font-size: 1rem;
+    font-weight: 700;
     cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.submit-btn:hover {
+    background-color: #3b7bc4;
+}
+
+.submit-btn:disabled {
+    background-color: #a0c3e8;
+    cursor: not-allowed;
 }
 
 .error-message {
-    color: red;
-    font-size: 0.9em;
+    color: #ff4d4d;
+    font-size: 0.9rem;
+    text-align: center;
+    background: #ffe6e6;
+    padding: 10px;
+    border-radius: 8px;
 }
 
-.switch-link a { 
-    color: #42b983; 
-    text-decoration: none; 
+.footer {
+    margin-top: 30px;
+    text-align: center;
+    font-size: 0.9rem;
+    color: #888;
+}
+
+.footer .link {
+    color: #4991de;
+    font-weight: 600;
+    text-decoration: none;
+    margin-left: 5px;
+}
+
+.footer .link:hover {
+    text-decoration: underline;
 }
 </style>

@@ -4,6 +4,7 @@ import DashboardView from '../views/DashboardView.vue'
 import RegisterPage from '../views/RegisterPage.vue'
 import ExpenseDetailView from '@/views/ExpenseDetailView.vue'
 import ProfileView from '@/views/ProfileView.vue'
+import AddCategoryView from '@/views/AddCategoryView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -39,9 +40,15 @@ const router = createRouter({
       meta: { requiresAuth: true }
     },
     {
-      path: '/profile/:id',
+      path: '/profile',
       name: 'profile',
       component: ProfileView,
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/category/add',
+      name: 'add-category',
+      component: AddCategoryView,
       meta: { requiresAuth: true }
     },
   ],

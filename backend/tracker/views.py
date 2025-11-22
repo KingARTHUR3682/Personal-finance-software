@@ -5,6 +5,7 @@ from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from rest_framework.views import APIView
 
 # --------------------------------------------------
 #  USER REGISTRATION VIEW
@@ -57,4 +58,15 @@ class ExpenseViewSet(viewsets.ModelViewSet):
         """Automatically assign the new create expense to the currently authenticated user"""
 
         serializer.save(user=self.request.user)
+
+# --------------------------------------------------
+#  PROFILE VIEW
+# --------------------------------------------------
+class UserProfileView(APIView):
+    """API endpoint to get the current user's details"""
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        serializer = UserSerializer(request.user)
+        return Response(serializer.data)
     

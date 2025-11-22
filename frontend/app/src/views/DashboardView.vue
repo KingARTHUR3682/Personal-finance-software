@@ -10,11 +10,17 @@ const router = useRouter()
 const expenses = ref([])
 const loading = ref(false)
 const showForm = ref(false)
-const filterType = ref('month') // 'day', 'week', 'month', 'custom'
+
+// --- 1. New State for Date Navigation ---
+const filterType = ref('week') // Default to week
+const currentDate = ref(new Date()) // Tracks the currently selected date
+const customStart = ref(new Date().toISOString().split('T')[0])
+const customEnd = ref(new Date().toISOString().split('T')[0])
 
 const fetchExpenses = async () => {
     loading.value = true
     try {
+        // Use your actual IP here
         const response = await axios.get('http://192.168.100.40:8000/api/expenses/', {
             headers: { Authorization: `Bearer ${authStore.token}` }
         })
@@ -28,19 +34,79 @@ const fetchExpenses = async () => {
 
 onMounted(fetchExpenses)
 
-// --- Filter Logic ---
+// --- 2. Helper Functions for Date Ranges ---
+const getStartOfWeek = (date) => {
+    const d = new Date(date)
+    const day = d.getDay() // 0 (Sun) to 6 (Sat)
+    const diff = d.getDate() - day + (day === 0 ? -6 : 1) // Adjust to Monday start
+    return new Date(d.setDate(diff))
+}
+
+const getEndOfWeek = (date) => {
+    const d = getStartOfWeek(date)
+    d.setDate(d.getDate() + 6)
+    return d
+}
+
+// --- 3. Navigation Logic (< Prev | Next >) ---
+const shiftDate = (step) => {
+    const newDate = new Date(currentDate.value)
+    if (filterType.value === 'day') {
+        newDate.setDate(newDate.getDate() + step)
+    } else if (filterType.value === 'week') {
+        newDate.setDate(newDate.getDate() + (step * 7))
+    } else if (filterType.value === 'month') {
+        newDate.setMonth(newDate.getMonth() + step)
+    }
+    currentDate.value = newDate
+}
+
+// Display text for the current date range (e.g., "Nov 2025")
+const dateDisplay = computed(() => {
+    const opts = { year: 'numeric', month: 'short', day: 'numeric' }
+    const d = currentDate.value
+    
+    if (filterType.value === 'day') return d.toLocaleDateString('en-MY', opts)
+    if (filterType.value === 'month') return d.toLocaleDateString('en-MY', { month: 'long', year: 'numeric' })
+    if (filterType.value === 'week') {
+        const start = getStartOfWeek(d)
+        const end = getEndOfWeek(d)
+        return `${start.getDate()} ${start.toLocaleString('default', { month: 'short' })} - ${end.getDate()} ${end.toLocaleString('default', { month: 'short' })}`
+    }
+    return 'Custom Range'
+})
+
+// --- 4. Fixed Filter Logic ---
 const filteredList = computed(() => {
-    const now = new Date()
     return expenses.value.filter(exp => {
         const expDate = new Date(exp.date)
+        // Reset times for accurate comparison
+        expDate.setHours(0,0,0,0)
+        const curr = new Date(currentDate.value)
+        curr.setHours(0,0,0,0)
+
         if (filterType.value === 'day') {
-            return expDate.toDateString() === now.toDateString()
-        } else if (filterType.value === 'month') {
-            return expDate.getMonth() === now.getMonth() && expDate.getFullYear() === now.getFullYear()
+            return expDate.getTime() === curr.getTime()
+        } 
+        else if (filterType.value === 'week') {
+            const start = getStartOfWeek(curr)
+            const end = getEndOfWeek(curr)
+            // Check if date is between start and end
+            start.setHours(0,0,0,0)
+            end.setHours(23,59,59,999)
+            return expDate >= start && expDate <= end
+        } 
+        else if (filterType.value === 'month') {
+            return expDate.getMonth() === curr.getMonth() && expDate.getFullYear() === curr.getFullYear()
+        } 
+        else if (filterType.value === 'custom') {
+            const start = new Date(customStart.value)
+            const end = new Date(customEnd.value)
+            end.setHours(23,59,59,999)
+            return expDate >= start && expDate <= end
         }
-        // Add week logic here if needed
         return true 
-    }).sort((a, b) => new Date(b.date) - new Date(a.date)) // Sort Newest First
+    }).sort((a, b) => new Date(b.date) - new Date(a.date))
 })
 
 // --- Totals Logic ---
@@ -56,7 +122,7 @@ const totalExpense = computed(() =>
 
 const balance = computed(() => (totalIncome.value - totalExpense.value).toFixed(2))
 
-// --- Grouping Logic (Date Headers) ---
+// --- Grouping Logic ---
 const groupedExpenses = computed(() => {
     const groups = {}
     filteredList.value.forEach(exp => {
@@ -71,10 +137,9 @@ const groupedExpenses = computed(() => {
         if (exp.transaction_type === 'expense') groups[dateKey].dayTotal -= amt
         else groups[dateKey].dayTotal += amt
     })
-    return Object.values(groups) // Convert object to array
+    return Object.values(groups)
 })
 
-// --- Navigation ---
 const goToDetail = (id) => {
     router.push(`/expense/${id}`)
 }
@@ -93,6 +158,18 @@ const goToDetail = (id) => {
                 >
                     {{ type === 'custom' ? 'Custom' : type.charAt(0).toUpperCase() + type.slice(1) }}
                 </span>
+            </div>
+
+            <div class="date-nav" v-if="filterType !== 'custom'">
+                <button @click="shiftDate(-1)" class="nav-arrow">&lt;</button>
+                <span class="current-date-label">{{ dateDisplay }}</span>
+                <button @click="shiftDate(1)" class="nav-arrow">&gt;</button>
+            </div>
+
+            <div class="custom-inputs" v-else>
+                <input type="date" v-model="customStart">
+                <span>to</span>
+                <input type="date" v-model="customEnd">
             </div>
 
             <div class="summary-container">
@@ -117,8 +194,10 @@ const goToDetail = (id) => {
 
         <div v-if="showForm" class="modal-overlay" @click.self="showForm = false">
             <div class="modal-content">
-                <button class="close-btn" @click="showForm = false">&times;</button>
-                <ExpenseForm @saved="() => { showForm = false; fetchExpenses() }" />
+                <ExpenseForm 
+                    @saved="() => { showForm = false; fetchExpenses() }" 
+                    @close="showForm = false"
+                />
             </div>
         </div>
 
@@ -156,7 +235,9 @@ const goToDetail = (id) => {
                 </div>
             </div>
             
-            <div v-if="filteredList.length === 0" class="empty-state">No records found.</div>
+            <div v-if="filteredList.length === 0" class="empty-state">
+                No records found for this period.
+            </div>
         </div>
     </div>
 </template>
@@ -166,12 +247,27 @@ const goToDetail = (id) => {
 .dashboard { background-color: #f5f5f5; min-height: 100vh; }
 
 /* Top Section */
-.top-section { background-color: white; padding: 15px 20px 25px; border-bottom-left-radius: 20px; border-bottom-right-radius: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+.top-section { 
+    background-color: white; 
+    padding: 15px 20px 25px; 
+    border-bottom-left-radius: 20px; 
+    border-bottom-right-radius: 20px; 
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05); 
+}
 
 /* Filters */
-.filter-bar { display: flex; justify-content: space-between; margin-bottom: 20px; background: #f0f0f0; padding: 4px; border-radius: 10px; }
-.filter-item { flex: 1; text-align: center; padding: 8px 0; font-size: 0.9rem; color: #888; border-radius: 8px; cursor: pointer; }
+.filter-bar { display: flex; justify-content: space-between; margin-bottom: 15px; background: #f0f0f0; padding: 4px; border-radius: 10px; }
+.filter-item { flex: 1; text-align: center; padding: 8px 0; font-size: 0.9rem; color: #888; border-radius: 8px; cursor: pointer; transition: all 0.2s; }
 .filter-item.active { background: white; color: black; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+
+/* Date Navigation */
+.date-nav { display: flex; justify-content: center; align-items: center; margin-bottom: 20px; gap: 15px; }
+.nav-arrow { background: none; border: none; font-size: 1.5rem; color: #4991de; cursor: pointer; padding: 0 10px; font-weight: bold; }
+.current-date-label { font-weight: 600; font-size: 1rem; color: #333; min-width: 150px; text-align: center; }
+
+/* Custom Inputs */
+.custom-inputs { display: flex; justify-content: center; align-items: center; gap: 10px; margin-bottom: 20px; }
+.custom-inputs input { padding: 5px; border: 1px solid #ddd; border-radius: 5px; }
 
 /* Cards */
 .balance-header { text-align: center; margin-bottom: 15px; font-weight: bold; color: #4991de; }
@@ -183,28 +279,51 @@ const goToDetail = (id) => {
 .card-amount { font-size: 1.2rem; font-weight: bold; margin-top: 5px; }
 
 /* History Lists */
-.history-section { padding: 20px; }
+.history-section { padding: 20px; padding-bottom: 90px; } 
 .list-header { display: flex; justify-content: space-between; margin-bottom: 10px; font-weight: bold; color: #333; }
 
 .date-header { display: flex; justify-content: space-between; font-size: 0.85rem; color: #888; margin: 15px 0 5px; padding: 0 5px; }
 .daily-total.red { color: #ff4d4d; }
 .daily-total.green { color: #42b983; }
 
-.transaction-item { background: white; padding: 12px 15px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; cursor: pointer; }
+.transaction-item { background: white; padding: 12px 15px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
 .left-col { display: flex; align-items: center; gap: 12px; }
-.icon-circle { width: 40px; height: 40px; background: #f5f5f5; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; }
+.icon-circle { width: 40px; height: 40px; background: #f5f5f5; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; }
 .text-info { display: flex; flex-direction: column; }
 .item-name { font-weight: bold; font-size: 0.95rem; color: #333; }
 .item-note { font-size: 0.75rem; color: #aaa; }
 .item-amount { font-weight: bold; font-size: 1rem; }
-.item-amount.expense { color: #333; } /* Usually standard color in modern apps, or red if preferred */
+.item-amount.expense { color: #333; }
 .item-amount.income { color: #42b983; }
+
+.empty-state { text-align: center; color: #aaa; margin-top: 30px; }
 
 /* FAB */
 .fab { position: fixed; bottom: 90px; right: 20px; width: 50px; height: 50px; background: #eea838; color: white; border: none; border-radius: 50%; font-size: 1.5rem; box-shadow: 0 4px 12px rgba(238, 168, 56, 0.4); cursor: pointer; z-index: 100; }
 
-/* Reuse your existing Modal CSS here... */
-.modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 2000; display: flex; align-items: center; justify-content: center; }
-.modal-content { background: #2c2c2e; width: 90%; max-width: 400px; padding: 20px; border-radius: 20px; position: relative; }
-.close-btn { position: absolute; top: 10px; right: 10px; background: red; color: white; border:none; width: 25px; height: 25px; border-radius: 50%; cursor: pointer;}
+/* MODAL STYLES UPDATED: Transparent background, proper centering */
+.modal-overlay { 
+    position: fixed; 
+    top: 0; 
+    left: 0; 
+    width: 100%; 
+    height: 100%; 
+    background: rgba(0,0,0,0.05); 
+    z-index: 2000; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    backdrop-filter: blur(1px);
+}
+
+.modal-content { 
+    background: #2c2c2e; 
+    width: 95%; 
+    max-width: 420px; 
+    padding: 0; 
+    border-radius: 20px; 
+    position: relative;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    overflow: hidden;
+}
 </style>

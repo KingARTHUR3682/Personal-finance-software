@@ -21,15 +21,17 @@ const handleRegister = async () => {
             password: password.value
         })
 
-        alert('Account created, please log in.')
+        alert('Account created successfully! Please log in.')
         router.push('/login')
     } catch (error) {
-        console.error("Error register new user: ", error)
+        console.error("Error registering:", error)
         if (error.response && error.response.data) {
-            // Show specific errors from Django. ("Username already exists.")
-            errorMessage.value = JSON.stringify(error.response.data)
+            // Handle Django error object
+            const data = error.response.data
+            // Join array errors if they exist
+            errorMessage.value = Object.values(data).flat().join(' ')
         } else {
-            errorMessage.value = 'Registration failed.'
+            errorMessage.value = 'Registration failed. Please try again.'
         }
     } finally {
         loading.value = false
@@ -38,80 +40,177 @@ const handleRegister = async () => {
 </script>
 
 <template>
-    <div class="auth-page">
-        <h2>Create Account</h2>
-        <form @submit.prevent="handleRegister">
-            <div class="form-group">
-                <label>Username</label>
-                <input type="text" v-model="username" required />
-            </div>
-            
-            <div class="form-group">
-                <label>Email</label>
-                <input type="email" v-model="email" required />
+    <div class="auth-container">
+        <div class="auth-card">
+            <div class="header">
+                <h1>Create Account</h1>
+                <p>Join us to track your finances</p>
             </div>
 
-            <div class="form-group">
-                <label>Password</label>
-                <input type="password" v-model="password" required />
+            <form @submit.prevent="handleRegister" class="auth-form">
+                <div class="input-group">
+                    <label>Username</label>
+                    <input 
+                        type="text" 
+                        v-model="username" 
+                        placeholder="Choose a username"
+                        required 
+                    />
+                </div>
+                
+                <div class="input-group">
+                    <label>Email</label>
+                    <input 
+                        type="email" 
+                        v-model="email" 
+                        placeholder="Enter your email"
+                        required 
+                    />
+                </div>
+
+                <div class="input-group">
+                    <label>Password</label>
+                    <input 
+                        type="password" 
+                        v-model="password" 
+                        placeholder="Create a password"
+                        required 
+                    />
+                </div>
+                
+                <button type="submit" class="submit-btn" :disabled="loading">
+                    {{ loading ? 'Creating Account...' : 'Sign Up' }}
+                </button>
+
+                <p v-if="errorMessage" class="error-message">{{ errorMessage }}</p>
+            </form>
+
+            <div class="footer">
+                <p>Already have an account?</p>
+                <router-link to="/login" class="link">Log In</router-link>
             </div>
-            
-            <button type="submit" :disabled="loading">
-                {{ loading ? 'Creating...' : 'Sign Up' }}
-            </button>
-
-            <p v-if="errorMessage" class="error">{{ errorMessage }}</p>
-
-            <p class="switch-link">
-                Already have an account? <router-link to="/login">Log In</router-link>
-            </p>
-        </form>
+        </div>
     </div>
 </template>
 
 <style scoped>
-/* Reusing styles similar to Login for consistency */
-.auth-page {
-    max-width: 400px;
-    margin: 50px auto;
+.auth-container {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #f5f5f5;
     padding: 20px;
 }
-.form-group { 
-    margin-bottom: 15px;
+
+.auth-card {
+    background: white;
+    width: 100%;
+    max-width: 400px;
+    padding: 40px 30px;
+    border-radius: 24px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.05);
 }
-label { 
-    display: block; 
-    margin-bottom: 5px; 
-    color: #aaa; 
+
+.header {
+    text-align: center;
+    margin-bottom: 30px;
 }
-input { 
-    width: 100%; padding: 10px; 
-    border-radius: 8px; border: 1px solid #444;
-    background: #2c2c2e; color: white;
+
+.header h1 {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: #333;
+    margin-bottom: 8px;
 }
-button {
-    width: 100%; padding: 12px;
-    background-color: #42b983; color: white;
-    border: none; border-radius: 8px;
-    font-weight: bold; cursor: pointer;
+
+.header p {
+    color: #888;
+    font-size: 0.95rem;
+}
+
+.auth-form {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.input-group label {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #555;
+    margin-left: 4px;
+}
+
+.input-group input {
+    width: 100%;
+    padding: 14px 16px;
+    background-color: #f9f9f9;
+    border: 1px solid #eee;
+    border-radius: 12px;
+    font-size: 1rem;
+    transition: all 0.2s;
+    outline: none;
+}
+
+.input-group input:focus {
+    background-color: white;
+    border-color: #42b983; /* Green accent for Register */
+    box-shadow: 0 0 0 3px rgba(66, 185, 131, 0.1);
+}
+
+.submit-btn {
     margin-top: 10px;
+    padding: 16px;
+    background-color: #42b983; /* Green button */
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background-color 0.2s;
 }
-button:disabled { 
-    background-color: #555; 
+
+.submit-btn:hover {
+    background-color: #3aa876;
 }
-.error { 
-    color: #ff4d4d; 
-    font-size: 0.9rem; 
-    margin-top: 10px; 
+
+.submit-btn:disabled {
+    background-color: #a0dcc3;
+    cursor: not-allowed;
 }
-.switch-link { 
-    text-align: center; 
-    margin-top: 20px; 
-    font-size: 0.9rem; 
-    color: #aaa; 
+
+.error-message {
+    color: #ff4d4d;
+    font-size: 0.9rem;
+    text-align: center;
+    background: #ffe6e6;
+    padding: 10px;
+    border-radius: 8px;
 }
-.switch-link a { 
-    color: #42b983; 
-    text-decoration: none; 
+
+.footer {
+    margin-top: 30px;
+    text-align: center;
+    font-size: 0.9rem;
+    color: #888;
+}
+
+.footer .link {
+    color: #42b983;
+    font-weight: 600;
+    text-decoration: none;
+    margin-left: 5px;
+}
+
+.footer .link:hover {
+    text-decoration: underline;
 }
 </style>

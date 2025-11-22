@@ -1,250 +1,253 @@
 <script setup>
-import { ref, watch } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import axios from 'axios'
 import { useAuthStore } from '@/stores/auth'
-import CategoryGrid from './CategoryGrid.vue'
+import { useRouter } from 'vue-router'
 
-const props = defineProps({
-  expense: {
-    type: Object,
-    default: null
-  }
-})
-
-const emit = defineEmits(['saved'])
-
+const props = defineProps({ expense: { type: Object, default: null } })
+const emit = defineEmits(['saved', 'close']) // Add 'close' emit
+const router = useRouter()
 const authStore = useAuthStore()
-const loading = ref(false)
-const errorMessage = ref('')
 
-// --- 1. DEFINE DATA VARIABLES FIRST ---
-const transactionType = ref('expense')
-const selectedCategoryId = ref(null)
+// --- Data ---
+const categories = ref([])
+const transactionType = ref('expense') 
+const selectedParentId = ref(null)
+const selectedCategory = ref(null)
+
+// Form Data
+const amountStr = ref('0') 
 const description = ref('')
-const amount = ref('')
 const date = ref(new Date().toISOString().split('T')[0])
 const receiptFile = ref(null)
+const fileInput = ref(null)
 
-// --- 2. DEFINE HELPER FUNCTIONS ---
-const resetForm = () => {
-    transactionType.value = 'expense'
-    selectedCategoryId.value = null
-    description.value = ''
-    amount.value = ''
-    date.value = new Date().toISOString().split('T')[0]
-    receiptFile.value = null
+// --- Loading Data ---
+onMounted(async () => {
+    try {
+        const res = await axios.get('http://192.168.100.40:8000/api/categories/', {
+            headers: { Authorization: `Bearer ${authStore.token}` }
+        })
+        categories.value = res.data
+        const firstParent = groupedCategories.value[0]
+        if (firstParent) selectedParentId.value = firstParent.id
+    } catch (error) { 
+      console.error("Error fetching records: ", error) 
+    }
+})
+
+// --- Computed Logic ---
+const filteredCategories = computed(() => categories.value.filter(c => c.type === transactionType.value))
+
+const groupedCategories = computed(() => {
+    const parents = filteredCategories.value.filter(c => !c.parent)
+    return parents.map(p => ({
+        ...p,
+        children: filteredCategories.value.filter(c => c.parent === p.id)
+    }))
+})
+
+const currentChildren = computed(() => {
+    if (!selectedParentId.value) return []
+    const parent = groupedCategories.value.find(p => p.id === selectedParentId.value)
+    return parent ? parent.children : []
+})
+
+// --- Keypad Logic ---
+const onNumClick = (num) => {
+    if (amountStr.value === '0' && num !== '.') amountStr.value = num.toString()
+    else if (num === '.' && amountStr.value.includes('.')) return
+    else amountStr.value += num.toString()
 }
 
-const handleFileChange = (event) => {
-  receiptFile.value = event.target.files[0]
+const onBackspace = () => {
+    if (amountStr.value.length <= 1) amountStr.value = '0'
+    else amountStr.value = amountStr.value.slice(0, -1)
 }
 
-// --- 3. DEFINE WATCHER LAST ---
-watch(() => props.expense, (newExpense) => {
-  if (newExpense) {
-    // Edit mode
-    transactionType.value = newExpense.transaction_type
-    selectedCategoryId.value = newExpense.category
-    description.value = newExpense.description
-    amount.value = newExpense.amount
-    date.value = newExpense.date
-  } else {
-    // Create mode
-    resetForm()
-  }
-}, { immediate: true })
+const triggerFileUpload = () => fileInput.value.click()
+const onFileChange = (e) => receiptFile.value = e.target.files[0]
 
+// --- Submission ---
 const handleSubmit = async () => {
-  if (!selectedCategoryId.value) {
-    errorMessage.value = "Please select a category."
-    return
-  }
+    if (!selectedCategory.value) return alert("Please select a category")
+    if (parseFloat(amountStr.value) === 0) return alert("Enter an amount")
 
-  loading.value = true
-  errorMessage.value = ''
-
-  try {
     const formData = new FormData()
     formData.append('transaction_type', transactionType.value)
-    formData.append('category', selectedCategoryId.value)
+    formData.append('category', selectedCategory.value.id)
+    formData.append('amount', amountStr.value)
     formData.append('description', description.value)
-    formData.append('amount', amount.value)
     formData.append('date', date.value)
+    if (receiptFile.value) formData.append('receipt', receiptFile.value)
 
-    if (receiptFile.value) {
-      formData.append('receipt', receiptFile.value)
+    try {
+        const url = 'http://192.168.100.40:8000/api/expenses/'
+        const config = { headers: { Authorization: `Bearer ${authStore.token}` }}
+        
+        if (props.expense) await axios.put(`${url}${props.expense.id}/`, formData, config)
+        else await axios.post(url, formData, config)
+        
+        emit('saved')
+    } catch (error) {
+        alert("Failed to save record.")
+        console.error("Error saving record: ", error)
     }
-
-    const config = {
-        headers: {
-            Authorization: `Bearer ${authStore.token}`
-            // Note: No Content-Type header here! Axios handles it.
-        }
-    }
-
-    // IMPORTANT: Use your correct IP address here!
-    const API_URL = 'http://192.168.100.40:8000/api/expenses/'
-
-    if (props.expense) {
-      await axios.put(`${API_URL}${props.expense.id}/`, formData, config)
-    } else {
-      await axios.post(API_URL, formData, config)
-    }
-    
-    resetForm()
-    emit('saved')
-
-  } catch (error) {
-    console.error("Error saving:", error)
-    if (error.response && error.response.data) {
-        errorMessage.value = JSON.stringify(error.response.data)
-    } else {
-        errorMessage.value = "Failed to save. Check your connection."
-    }
-  } finally {
-    loading.value = false
-  }
 }
+
+const goToAddCategory = () => router.push('/category/add')
+
 </script>
 
 <template>
-  <div class="expense-form-card">
+<div class="page-layout">
     
-    <div class="type-switcher">
-        <button 
-            :class="{ active: transactionType === 'expense' }" 
-            @click="transactionType = 'expense'"
-        >
-            Expense
-        </button>
-        <button 
-            :class="{ active: transactionType === 'income' }" 
-            @click="transactionType = 'income'"
-        >
-            Income
-        </button>
+    <div class="type-toggle">
+        <span :class="{active: transactionType==='expense'}" @click="transactionType='expense'">Expense</span>
+        <span :class="{active: transactionType==='income'}" @click="transactionType='income'">Income</span>       
     </div>
 
-    <CategoryGrid 
-        v-model="selectedCategoryId" 
-        :transaction-type="transactionType" 
-    />
-
-    <form @submit.prevent="handleSubmit" class="form-layout">
-      
-      <div class="form-row">
-        <div class="form-group">
-          <label>Amount</label>
-          <input v-model="amount" type="number" step="0.01" placeholder="0.00" required />
+    <div class="parent-tabs">
+        <div 
+            v-for="p in groupedCategories" :key="p.id"
+            class="tab-item"
+            :class="{active: selectedParentId === p.id}"
+            @click="selectedParentId = p.id"
+        >
+            {{ p.name }}
         </div>
-        <div class="form-group">
-          <label>Date</label>
-          <input v-model="date" type="date" required />
+    </div>
+
+    <div class="category-grid">
+        <div 
+            v-for="c in currentChildren" :key="c.id"
+            class="grid-item"
+            :class="{selected: selectedCategory?.id === c.id}"
+            @click="selectedCategory = c"
+        >
+            <div class="circle-icon">{{ c.icon }}</div>
+            <span class="cat-name">{{ c.name }}</span>
         </div>
-      </div>
+        <div class="grid-item" @click="goToAddCategory">
+            <div class="circle-icon dashed">+</div>
+            <span class="cat-name">Add</span>
+        </div>
+    </div>
 
-      <div class="form-group">
-        <label>Note / Description</label>
-        <input v-model="description" type="text" placeholder="What was this for?" />
-      </div>
+    <div class="bottom-controls">
+        <div class="info-bar">
+            <input v-model="description" placeholder="Click to add note..." class="note-input"/>
+            <div class="amount-display">
+                <span class="curr">RM</span>
+                <span class="val">{{ amountStr }}</span>
+            </div>
+        </div>
 
-      <div class="form-group">
-        <label>Image (Optional)</label>
-        <input type="file" @change="handleFileChange" accept="image/*" />
-      </div>
+        <div class="keypad-container">
+            <div class="num-pad">
+                <button @click="onNumClick(7)">7</button>
+                <button @click="onNumClick(8)">8</button>
+                <button @click="onNumClick(9)">9</button>
+                <button @click="onNumClick(4)">4</button>
+                <button @click="onNumClick(5)">5</button>
+                <button @click="onNumClick(6)">6</button>
+                <button @click="onNumClick(1)">1</button>
+                <button @click="onNumClick(2)">2</button>
+                <button @click="onNumClick(3)">3</button>
+                <button @click="onNumClick('.')">.</button>
+                <button @click="onNumClick(0)">0</button>
+                <button @click="onBackspace" class="icon-btn">⌫</button>
+            </div>
+            <div class="action-pad">
+                <button class="img-btn" @click="triggerFileUpload">
+                    {{ receiptFile ? '📷' : '🖼️' }}
+                </button>
+                <input type="file" ref="fileInput" hidden @change="onFileChange" accept="image/*">
+                <div class="date-btn-wrapper">
+                    <input type="date" v-model="date" class="hidden-date" />
+                    <button class="date-btn">Today</button>
+                </div>
+                <button class="submit-btn" @click="handleSubmit">OK</button>
+            </div>
+        </div>
+    </div>
 
-      <button class="save-btn" type="submit" :disabled="loading">
-        {{ loading ? 'Saving...' : 'Save Transaction' }}
-      </button>
-
-      <p v-if="errorMessage" class="error">{{ errorMessage }}</p>
-    </form>
-  </div>
+</div>
 </template>
 
 <style scoped>
-.expense-form-card {
-  background: #1c1c1e;
-  padding: 20px;
-  border-radius: 20px;
-  /* Allow the modal to scroll if content is tall */
-  max-height: 80vh; 
-  overflow-y: auto;
-}
-
-/* Type Switcher Styles */
-.type-switcher {
+/* --- Layout --- */
+.page-layout {
     display: flex;
-    background: #2c2c2e;
-    border-radius: 10px;
-    padding: 4px;
-    margin-bottom: 15px;
-}
-.type-switcher button {
-    flex: 1;
-    background: transparent;
-    border: none;
-    color: #888;
-    padding: 8px;
-    border-radius: 8px;
-    cursor: pointer;
-    font-weight: bold;
-    transition: all 0.2s;
-}
-.type-switcher button.active {
-    background: #42b983; /* Or #ff4d4d for expense if you prefer */
-    color: white;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    flex-direction: column;
+    height: 100%;
+    background: #f8f9fa;
+    font-family: sans-serif;
+    overflow: hidden; 
 }
 
-/* Form Layout */
-.form-layout {
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-  margin-top: 10px;
+/* --- 1. Top Bar --- */
+.type-toggle {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 15px;
+    position: relative;
+    background: white;
 }
-.form-row {
-  display: flex;
-  gap: 15px;
+.type-toggle span {
+    margin: 0 15px;
+    font-weight: bold;
+    color: #999;
+    cursor: pointer;
+    position: relative;
+    padding-bottom: 5px;
 }
-.form-group {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-  min-width: 0;
+.type-toggle span.active { color: #333; }
+.type-toggle span.active::after {
+    content: ''; position: absolute; bottom: 0; left: 0; width: 100%; height: 3px; background: #333; border-radius: 2px;
 }
-label {
-  font-size: 0.85rem;
-  color: #aaa;
-  margin-bottom: 5px;
+.settings-icon {
+    position: absolute; right: 20px; font-size: 1.2rem; cursor: pointer; margin: 0 !important;
 }
-input {
-  width: 100%;
-  padding: 12px;
-  border-radius: 8px;
-  border: 1px solid #333;
-  background: #2c2c2e;
-  color: white;
-  font-size: 1rem;
+.close-icon {
+    position: absolute; left: 20px; font-size: 1.2rem; cursor: pointer; margin: 0 !important; color: #333;
 }
-.save-btn {
-  margin-top: 10px;
-  padding: 14px;
-  background-color: #42b983;
-  color: white;
-  border: none;
-  border-radius: 12px;
-  font-weight: bold;
-  font-size: 1.1rem;
-  cursor: pointer;
+
+/* --- 2. Parent Tabs --- */
+.parent-tabs {
+    display: flex; overflow-x: auto; background: white; padding: 5px 10px; border-bottom: 1px solid #eee; white-space: nowrap;
 }
-.save-btn:disabled {
-  background-color: #555;
+.tab-item { padding: 8px 16px; color: #666; font-size: 0.9rem; cursor: pointer; }
+.tab-item.active { color: #333; font-weight: bold; background: #f0f0f0; border-radius: 20px; }
+
+/* --- 3. Grid --- */
+.category-grid {
+    flex: 1; overflow-y: auto; display: grid; grid-template-columns: repeat(4, 1fr); align-content: start; gap: 15px; padding: 20px;
 }
-.error {
-  color: #ff4d4d;
-  font-size: 0.9rem;
-  text-align: center;
-}
+.grid-item { display: flex; flex-direction: column; align-items: center; cursor: pointer; }
+.circle-icon { width: 50px; height: 50px; background: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; margin-bottom: 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+.circle-icon.dashed { border: 2px dashed #ccc; color: #ccc; box-shadow: none; }
+.grid-item.selected .circle-icon { background: #ffeaa7; border: 2px solid #fdcb6e; }
+.cat-name { font-size: 0.75rem; color: #666; text-align: center; }
+
+/* --- 4. Bottom Controls --- */
+.bottom-controls { background: white; border-top: 1px solid #eee; }
+.info-bar { display: flex; justify-content: space-between; align-items: center; padding: 10px 15px; background: #f9f9f9; }
+.note-input { border: none; background: transparent; font-size: 0.9rem; outline: none; width: 60%; color: #666; }
+.amount-display { font-weight: bold; font-size: 1.2rem; }
+.amount-display .curr { font-size: 0.9rem; margin-right: 5px; }
+
+.keypad-container { display: flex; height: 240px; }
+.num-pad { flex: 3; display: grid; grid-template-columns: repeat(3, 1fr); border-right: 1px solid #f0f0f0; }
+.num-pad button { background: white; border: 1px solid #f9f9f9; font-size: 1.5rem; font-weight: 500; color: #333; cursor: pointer; }
+.num-pad button:active { background: #eee; }
+
+.action-pad { flex: 1; display: flex; flex-direction: column; }
+.action-pad > button, .date-btn-wrapper { flex: 1; width: 100%; border: none; display: flex; align-items: center; justify-content: center; cursor: pointer; font-weight: bold; }
+.img-btn { background: white; font-size: 1.2rem; border-bottom: 1px solid #eee !important; }
+.date-btn-wrapper { position: relative; background: #42b983; color: white; }
+.date-btn { background: transparent; border: none; color: white; font-weight: bold; width: 100%; height: 100%; }
+.hidden-date { position: absolute; opacity: 0; width: 100%; height: 100%; cursor: pointer; }
+.submit-btn { background: #4991de; color: white; flex: 1.5 !important; }
 </style>
