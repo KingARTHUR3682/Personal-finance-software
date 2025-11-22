@@ -17,7 +17,7 @@ const showEditModal = ref(false) // State to control the edit modal
 const fetchExpenseDetails = async () => {
   const id = route.params.id
   try {
-    const response = await axios.get(`http://192.168.100.40:8000/api/expenses/${id}/`, {
+    const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/expenses/${id}/`, {
       headers: { Authorization: `Bearer ${authStore.token}` }
     })
     expense.value = response.data
@@ -35,7 +35,7 @@ onMounted(fetchExpenseDetails)
 const deleteExpense = async () => {
   if (!confirm("Delete this record?")) return
   try {
-    await axios.delete(`http://192.168.100.40:8000/api/expenses/${expense.value.id}/`, {
+    await axios.delete(`${import.meta.env.VITE_API_URL}/api/expenses/${expense.value.id}/`, {
       headers: { Authorization: `Bearer ${authStore.token}` }
     })
     router.push('/')

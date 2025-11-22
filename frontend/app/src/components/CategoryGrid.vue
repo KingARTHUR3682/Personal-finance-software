@@ -14,7 +14,7 @@ const categories = ref([])
 
 onMounted(async () => {
     try {
-        const response = await axios.get('http://192.168.100.40:8000/api/categories/', {
+        const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/categories/`, {
             headers: { Authorization: `Bearer ${authStore.token}` }
         })
         categories.value = response.data

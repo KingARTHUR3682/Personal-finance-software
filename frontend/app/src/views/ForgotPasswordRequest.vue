@@ -11,7 +11,7 @@ const loading = ref(false)
 const error = ref('')
 
 // This URL maps to the /api/auth/password_reset/ endpoint configured in the backend.
-const BACKEND_URL = 'http://192.168.100.40:8000/api/auth/password_reset/'
+const BACKEND_URL = `${import.meta.env.VITE_API_URL}/api/auth/password_reset/`
 
 const handleRequest = async () => {
     loading.value = true

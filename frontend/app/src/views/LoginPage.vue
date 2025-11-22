@@ -16,7 +16,7 @@ const handleLogin = async () => {
     loading.value = true
     errorMessage.value = ''
     try {
-        const response = await axios.post('http://192.168.100.40:8000/api/token/', {
+        const response = await axios.post(`${import.meta.env.VITE_API_URL}/api/token/`, {
             username: username.value,
             password: password.value
         })

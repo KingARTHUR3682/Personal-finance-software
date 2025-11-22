@@ -38,7 +38,7 @@ const dateLabel = computed(() => {
 // --- Loading Data ---
 onMounted(async () => {
     try {
-        const res = await axios.get('http://192.168.100.40:8000/api/categories/', {
+        const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/categories/`, {
             headers: { Authorization: `Bearer ${authStore.token}` }
         })
         categories.value = res.data
@@ -95,7 +95,7 @@ const handleSubmit = async () => {
     if (receiptFile.value) formData.append('receipt', receiptFile.value)
 
     try {
-        const url = 'http://192.168.100.40:8000/api/expenses/'
+        const url = `${import.meta.env.VITE_API_URL}/api/expenses/`
         const config = { headers: { Authorization: `Bearer ${authStore.token}` }}
         
         if (props.expense) await axios.put(`${url}${props.expense.id}/`, formData, config)

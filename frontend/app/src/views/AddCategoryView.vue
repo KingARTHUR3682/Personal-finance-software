@@ -19,7 +19,7 @@ const categories = ref([])
 // Fetch all categories to populate the Parent dropdown
 onMounted(async () => {
   try {
-    const res = await axios.get('http://192.168.100.40:8000/api/categories/', {
+    const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/categories/`, {
         headers: { Authorization: `Bearer ${authStore.token}` }
     })
     categories.value = res.data
@@ -43,7 +43,7 @@ const saveCategory = async () => {
       parent: selectedParent.value || null 
     }
 
-    await axios.post('http://192.168.100.40:8000/api/categories/', payload, {
+    await axios.post(`${import.meta.env.VITE_API_URL}/api/categories/`, payload, {
       headers: { Authorization: `Bearer ${authStore.token}` }
     })
     router.push('/') // Go back to dashboard

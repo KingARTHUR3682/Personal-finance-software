@@ -14,7 +14,7 @@ const message = ref('')
 const loading = ref(false)
 const error = ref('')
 
-const BACKEND_URL_BASE = 'http://192.168.100.40:8000/api/auth/reset/'
+const BACKEND_URL_BASE = `${import.meta.env.VITE_API_URL}/api/auth/reset/`
 
 onMounted(() => {
     // Extract uidb64 and token from the route params set in index.js

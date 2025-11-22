@@ -21,7 +21,7 @@ const fetchExpenses = async () => {
     loading.value = true
     try {
         // Use your actual IP here
-        const response = await axios.get('http://192.168.100.40:8000/api/expenses/', {
+        const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/expenses/`, {
             headers: { Authorization: `Bearer ${authStore.token}` }
         })
         expenses.value = response.data

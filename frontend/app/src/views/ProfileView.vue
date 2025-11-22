@@ -14,7 +14,7 @@ const errorMessage = ref('')
 onMounted(async () => {
   try {
     // Fetch the current user's details from the backend
-    const response = await axios.get('http://192.168.100.40:8000/api/profile/', {
+    const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/profile/`, {
       headers: { Authorization: `Bearer ${authStore.token}` }
     })
     user.value = response.data
