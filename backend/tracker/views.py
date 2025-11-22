@@ -129,7 +129,7 @@ class PasswordResetConfirmView(APIView):
 
         try:
             uid = force_str(urlsafe_base64_decode(uidb64))
-            user = User.objects.getzk(pk=uid)
+            user = User.objects.get(pk=uid)
         except (TypeError, ValueError, OverflowError, User.DoesNotExist):
             return Response({'error': 'Invalid UID'}, status=status.HTTP_400_BAD_REQUEST)
 

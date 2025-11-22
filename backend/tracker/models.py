@@ -9,7 +9,7 @@ class Category(models.Model):
     ]
     name = models.CharField(max_length=100)
     # Icon name
-    icon = models.CharField(max_length=50, default=',mdi-help-circle')
+    icon = models.CharField(max_length=50, default='mdi-help-circle')
 
     type = models.CharField(max_length=10, choices=TRANSACTION_TYPES, default='expense')
 
@@ -43,4 +43,4 @@ class Expense(models.Model):
     receipt = models.ImageField(upload_to='receipts/', blank=True, null=True)
 
     def __str__(self):
-        return f"{self.transaction_type: {self.amount}}"
+        return f"{self.transaction_type}: {self.amount}"
