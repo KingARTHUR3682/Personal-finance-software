@@ -1,8 +1,8 @@
 <script setup>
-import axios from 'axios';
-import { ref, watch } from 'vue';
-import { useAuthStore } from '@/stores/auth';
-import CategoryGrid from './CategoryGrid.vue';
+import { ref, watch } from 'vue'
+import axios from 'axios'
+import { useAuthStore } from '@/stores/auth'
+import CategoryGrid from './CategoryGrid.vue'
 
 const props = defineProps({
   expense: {
@@ -11,41 +11,48 @@ const props = defineProps({
   }
 })
 
-const emit = defineEmits(['expense-added'])
+const emit = defineEmits(['saved'])
 
 const authStore = useAuthStore()
 const loading = ref(false)
 const errorMessage = ref('')
 
+// --- 1. DEFINE DATA VARIABLES FIRST ---
+const transactionType = ref('expense')
+const selectedCategoryId = ref(null)
+const description = ref('')
+const amount = ref('')
+const date = ref(new Date().toISOString().split('T')[0])
+const receiptFile = ref(null)
+
+// --- 2. DEFINE HELPER FUNCTIONS ---
 const resetForm = () => {
     transactionType.value = 'expense'
     selectedCategoryId.value = null
     description.value = ''
     amount.value = ''
     date.value = new Date().toISOString().split('T')[0]
+    receiptFile.value = null
 }
 
-// --- Form Data ---
-const transactionType = ref('expense')
-const selectedCategoryId = ref(null)
-const description = ref('')
-const amount = ref('')
-const date = ref(new Date().toISOString().split('T')[0]) // Default to today
+const handleFileChange = (event) => {
+  receiptFile.value = event.target.files[0]
+}
 
+// --- 3. DEFINE WATCHER LAST ---
 watch(() => props.expense, (newExpense) => {
   if (newExpense) {
-    // Edit mode: Fill the form
+    // Edit mode
     transactionType.value = newExpense.transaction_type
     selectedCategoryId.value = newExpense.category
     description.value = newExpense.description
     amount.value = newExpense.amount
     date.value = newExpense.date
   } else {
-    // Create mode: Clear the form
+    // Create mode
     resetForm()
   }
-}, {immediate: true})
-
+}, { immediate: true })
 
 const handleSubmit = async () => {
   if (!selectedCategoryId.value) {
@@ -55,31 +62,45 @@ const handleSubmit = async () => {
 
   loading.value = true
   errorMessage.value = ''
+
   try {
-      const headers = {Authorization: `Bearer ${authStore.token}`}
-      const data = {
-        transaction_type: transactionType.value,
-        category: selectedCategoryId.value,
-        description: description.value,
-        amount: amount.value,
-        date: date.value
-      }
+    const formData = new FormData()
+    formData.append('transaction_type', transactionType.value)
+    formData.append('category', selectedCategoryId.value)
+    formData.append('description', description.value)
+    formData.append('amount', amount.value)
+    formData.append('date', date.value)
 
-      if (props.expense) {
-        // --- Edit mode (PUT) ---
-        // Use the ID from prop
-        await axios.put(`http://192.168.100.40:8000/api/expenses/${props.expense.id}/`, data, { headers })
-      } else {
-        // --- Create mode (POST) ---
-        await axios.post('http://192.168.100.40:8000/api/expenses/', data, { headers })
-      }
+    if (receiptFile.value) {
+      formData.append('receipt', receiptFile.value)
+    }
 
-      resetForm()
-      emit('saved')
+    const config = {
+        headers: {
+            Authorization: `Bearer ${authStore.token}`
+            // Note: No Content-Type header here! Axios handles it.
+        }
+    }
 
-  } catch(error) {
-    console.error("Error saving: ", error)
-    errorMessage.value = "Failed to save. Check your connection."
+    // IMPORTANT: Use your correct IP address here!
+    const API_URL = 'http://192.168.100.40:8000/api/expenses/'
+
+    if (props.expense) {
+      await axios.put(`${API_URL}${props.expense.id}/`, formData, config)
+    } else {
+      await axios.post(API_URL, formData, config)
+    }
+    
+    resetForm()
+    emit('saved')
+
+  } catch (error) {
+    console.error("Error saving:", error)
+    if (error.response && error.response.data) {
+        errorMessage.value = JSON.stringify(error.response.data)
+    } else {
+        errorMessage.value = "Failed to save. Check your connection."
+    }
   } finally {
     loading.value = false
   }
@@ -125,6 +146,11 @@ const handleSubmit = async () => {
       <div class="form-group">
         <label>Note / Description</label>
         <input v-model="description" type="text" placeholder="What was this for?" />
+      </div>
+
+      <div class="form-group">
+        <label>Image (Optional)</label>
+        <input type="file" @change="handleFileChange" accept="image/*" />
       </div>
 
       <button class="save-btn" type="submit" :disabled="loading">
