@@ -23,7 +23,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = "django-insecure-4m$ulm$xjae0w*1orh_ufmfotbgnc-+4_1*k9sp+vqv)o$@qf-"
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 ALLOWED_HOSTS = ['*']
 
@@ -164,6 +164,8 @@ CORS_ALLOWED_ORIGINS = [
     "http://192.168.100.39:5173",
 ]
 
+CORS_ALLOW_CREDENTIALS = True
+
 import os
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
@@ -182,3 +184,6 @@ EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 FRONTEND_URL = 'http://192.168.100.40:5173'
 
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = True
