@@ -66,7 +66,7 @@ def compress_receipt_image(sender, instance, **kwargs):
             img = img.convert('RGB')
 
         # Resize logic: limit width to 1080px (maintaining aspect ratio)
-        max_width = 1080
+        max_width = 800
         if img.width > max_width:
             output_size = (max_width, int(img.height * (max_width / img.width)))
             img.thumbnail(output_size)
@@ -74,7 +74,7 @@ def compress_receipt_image(sender, instance, **kwargs):
         # Compress the image
         im_io = BytesIO()
         # Quality=70 is a good balance between size and visibility for receipts
-        img.save(im_io, format='JPEG', quality=70, optimize=True)
+        img.save(im_io, format='JPEG', quality=60, optimize=True)
         
         # Change the extension to .jpg since we converted it
         new_filename = os.path.splitext(instance.receipt.name)[0] + '.jpg'
