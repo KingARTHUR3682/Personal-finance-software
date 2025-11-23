@@ -25,7 +25,7 @@ SECRET_KEY = "django-insecure-4m$ulm$xjae0w*1orh_ufmfotbgnc-+4_1*k9sp+vqv)o$@qf-
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
-ALLOWED_HOSTS = ['haak.dpdns.org','haak-pfs-backend.onrender.com', 'localhost', '127.0.0.1', '192.168.100.40', '192.168.100.39']
+ALLOWED_HOSTS = ['*']
 
 CSRF_TRUSTED_ORIGINS = [
     "https://haak.dpdns.org",
