@@ -68,14 +68,14 @@ const router = createRouter({
 })
 
 router.beforeEach((to, from, next) => {
-    const publicPages = ['/login', '/register']
-    const authRequired = !publicPages.includes(to.path)
-    const loggedIn = localStorage.getItem('access_token')
+    // Check the route's meta field to see if it requires authentication
+    const authRequired = to.meta.requiresAuth;
+    const loggedIn = localStorage.getItem('access_token');
 
     if (authRequired && !loggedIn) {
-      next('/login')
+      next('/login');
     } else {
-      next()
+      next();
     }
 })
 
