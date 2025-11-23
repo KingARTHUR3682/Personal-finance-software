@@ -38,14 +38,39 @@ const dateLabel = computed(() => {
 // --- Loading Data ---
 onMounted(async () => {
     try {
-        const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/categories/`, {
-            headers: { Authorization: `Bearer ${authStore.token}` }
+        // 1. Fetch Categories
+        const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/categories/`, {
+            headers: { Authorization: `Bearer ${authStore.token}`}
         })
-        categories.value = res.data
-        const firstParent = groupedCategories.value[0]
-        if (firstParent) selectedParentId.value = firstParent.id
-    } catch (error) { 
-      console.error("Error fetching records: ", error) 
+        categories.value = response.data
+
+        // 2. Checking edit mode
+        if (props.expense) {
+            // Populate basic fields
+            transactionType.value = props.expense.transaction_type
+            amountStr.value = String(props.expense.amount)
+            description.value = props.expense.description || ''
+            date.value = props.expense.date
+
+            // Populate category
+            const expenseCategoryId = typeof props.expense.category === 'object' 
+                ? props.expense.category.id 
+                : props.expense.category
+
+            const foundCategory = categories.value.find(c => c.id === expenseCategoryId)
+
+            if (foundCategory) {
+                selectedCategory.value = foundCategory
+                // Set the active tab to the found category tab
+                selectedParentId.value = foundCategory.parent
+            } 
+        } else {
+            // Create Mode
+            const firstParent = groupedCategories.value[0]
+            if (firstParent) selectedParentId.value = firstParent.id
+        }
+    } catch(error) {
+        console.error("Error fetching records: ", error)
     }
 })
 
