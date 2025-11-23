@@ -23,13 +23,14 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = "django-insecure-4m$ulm$xjae0w*1orh_ufmfotbgnc-+4_1*k9sp+vqv)o$@qf-"
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
 ALLOWED_HOSTS = ['*']
 
 CSRF_TRUSTED_ORIGINS = [
     "https://haak.dpdns.org",
     "https://haak-pfs.arthurkbx.workers.dev",
+    "https://api.haak.dpdns.org"
 ]
 
 
@@ -179,3 +180,5 @@ SIMPLE_JWT = {
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
 FRONTEND_URL = 'http://192.168.100.40:5173'
+
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
