@@ -48,6 +48,8 @@ INSTALLED_APPS = [
 
     'rest_framework',
     'corsheaders',
+
+    'storages',
 ]
 
 MIDDLEWARE = [
@@ -166,8 +168,31 @@ CORS_ALLOWED_ORIGINS = [
 
 CORS_ALLOW_CREDENTIALS = True
 
-MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+# --------------------------------------------------
+#  GOOGLE CLOUD STORAGE SETTINGS
+# --------------------------------------------------
+
+# Retrieve these variables from .env file
+GS_BUCKET_NAME = os.getenv('GS_BUCKET_NAME')
+GS_PROJECT_ID = os.getenv('GS_PROJECT_ID')
+
+# Define the storage backends
+STORAGES = {
+    "default": {
+        "BACKEND": "storages.backends.gcloud.GoogleCloudStorage",
+        "OPTIONS": {
+            "bucket_name": GS_BUCKET_NAME,
+            "project_id": GS_PROJECT_ID,
+            "default_acl": "publicRead",
+        },
+    },
+    "staticfiles": {
+        "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+    },
+}
+
+# This ensures that when you access image.url, it points to Google Cloud
+MEDIA_URL = f'https://storage.googleapis.com/{GS_BUCKET_NAME}/'
 
 from datetime import timedelta
 

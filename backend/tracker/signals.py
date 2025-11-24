@@ -47,37 +47,44 @@ def create_default_categories(sender, instance, created, **kwargs):
 
 @receiver(pre_save, sender=Expense)
 def compress_receipt_image(sender, instance, **kwargs):
-    # Check if a receipt exists
-    if instance.receipt:
-        # If this is an update, check if the receipt is actually new to avoid re-compressing
-        if instance.pk:
-            try:
-                old_instance = Expense.objects.get(pk=instance.pk)
-                if old_instance.receipt == instance.receipt:
-                    return  # The image hasn't changed, do nothing
-            except Expense.DoesNotExist:
-                pass  # It's a new expense
+    if not instance.receipt:
+        return
 
-        # Open the image using Pillow
-        img = Image.open(instance.receipt)
+    # If updating, check if image actually changed to avoid re-compressing
+    if instance.pk:
+        try:
+            old_instance = Expense.objects.get(pk=instance.pk)
+            if old_instance.receipt == instance.receipt:
+                return
+        except Expense.DoesNotExist:
+            pass
 
-        # Convert images (like PNGs with transparency) to RGB so they can be saved as JPEG
-        if img.mode in ('RGBA', 'P'):
-            img = img.convert('RGB')
-
-        # Resize logic: limit width to 1080px (maintaining aspect ratio)
-        max_width = 800
-        if img.width > max_width:
-            output_size = (max_width, int(img.height * (max_width / img.width)))
-            img.thumbnail(output_size)
-
-        # Compress the image
-        im_io = BytesIO()
-        # Quality=70 is a good balance between size and visibility for receipts
-        img.save(im_io, format='JPEG', quality=60, optimize=True)
+    try:
+        # Open the file from Cloud Storage before reading
+        if not instance.receipt.closed:
+             instance.receipt.open()
         
-        # Change the extension to .jpg since we converted it
-        new_filename = os.path.splitext(instance.receipt.name)[0] + '.jpg'
+        # Read image with Pillow
+        image_field = instance.receipt
+        with Image.open(image_field) as img:
+            
+            if img.mode in ('RGBA', 'P'):
+                img = img.convert('RGB')
 
-        # Save the new compressed file back to the instance
-        instance.receipt.save(new_filename, ContentFile(im_io.getvalue()), save=False)
+            # Resize
+            max_width = 800
+            if img.width > max_width:
+                output_size = (max_width, int(img.height * (max_width / img.width)))
+                img.thumbnail(output_size)
+
+            # Compress
+            im_io = BytesIO()
+            img.save(im_io, format='JPEG', quality=60, optimize=True)
+            
+            new_filename = os.path.splitext(instance.receipt.name)[0] + '.jpg'
+
+            # Save back to field (save=False prevents infinite loop)
+            instance.receipt.save(new_filename, ContentFile(im_io.getvalue()), save=False)
+
+    except Exception as error:
+        print(f"Error compressing image: {error}")
