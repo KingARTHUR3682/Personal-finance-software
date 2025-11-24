@@ -225,3 +225,10 @@ SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
+
+# --------------------------------------------------
+#  FILE UPLOAD LIMITS
+# --------------------------------------------------
+# Allow uploads up to 10 MB (Default is 2.5 MB)
+DATA_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024  # 10 MB
+FILE_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024  # 10 MB
