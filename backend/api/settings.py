@@ -182,7 +182,6 @@ STORAGES = {
         "OPTIONS": {
             "bucket_name": GS_BUCKET_NAME,
             "project_id": GS_PROJECT_ID,
-            "default_acl": "publicRead",
         },
     },
     "staticfiles": {
