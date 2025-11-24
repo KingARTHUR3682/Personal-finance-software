@@ -305,5 +305,3 @@ dist
 
 # test-exclude temporary folder
 .test_tmp
-
-update.sh
