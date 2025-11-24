@@ -10,4 +10,7 @@ router.register(r'expenses', views.ExpenseViewSet, basename='expense')
 urlpatterns = [
     path('', include(router.urls)),
     path('profile/', views.UserProfileView.as_view(), name='user-profile'),
+
+    path('auth/password_reset/', views.RequestPasswordResetEmail.as_view(), name='password-reset-request'),
+    path('auth/reset/<str:uidb64>/<str:token>/', views.PasswordResetConfirmView.as_view(), name='password-reset-confirm'),
 ]
