@@ -44,7 +44,7 @@ def create_default_categories(sender, instance, created, **kwargs):
         Category.objects.create(name='Salary', icon='💵', type='income', parent=income, user=instance)
         Category.objects.create(name='Bonus', icon='🎁', type='income', parent=income, user=instance)
 
-
+# For image compress
 @receiver(pre_save, sender=Expense)
 def compress_receipt_image(sender, instance, **kwargs):
     if not instance.receipt:
