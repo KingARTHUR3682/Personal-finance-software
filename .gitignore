@@ -305,3 +305,5 @@ dist
 
 # test-exclude temporary folder
 .test_tmp
+
+credentials.json
