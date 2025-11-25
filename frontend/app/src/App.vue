@@ -4,14 +4,17 @@ import { useAuthStore } from '@/stores/auth'
 
 const authStore = useAuthStore()
 
-// Simple tab navigation logic can be added here later if needed
 </script>
 
 <template>
   <div class="app-container">
     <main class="content-area">
-      <RouterView />
-    </main>
+      <RouterView v-slot="{ Component }">
+        <Transition name="fade" mode="out-in">
+          <component :is="Component" />
+        </Transition>
+      </RouterView>
+      </main>
 
     <nav v-if="authStore.isAuthenticated" class="bottom-nav">
       <router-link to="/" class="nav-item">
@@ -31,6 +34,18 @@ const authStore = useAuthStore()
   padding-bottom: 80px; /* Space for bottom nav */
   min-height: 100vh;
 }
+
+/* Add these CSS classes for a smooth fade transition */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s ease; /* Adjust duration (e.g., 0.3s) and timing function as needed */
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+/* End of transition styles */
 
 .bottom-nav {
   position: fixed;
