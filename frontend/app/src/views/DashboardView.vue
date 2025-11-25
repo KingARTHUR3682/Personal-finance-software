@@ -11,8 +11,8 @@ const expenses = ref([])
 const loading = ref(false)
 const showForm = ref(false)
 
-// --- 1. New State for Date Navigation ---
-const filterType = ref('week') // Default to week
+// --- 1. State for Date Navigation ---
+const filterType = ref('month') // Default to month
 const currentDate = ref(new Date()) // Tracks the currently selected date
 const customStart = ref(new Date().toISOString().split('T')[0])
 const customEnd = ref(new Date().toISOString().split('T')[0])
@@ -160,18 +160,20 @@ const goToDetail = (id) => {
                     {{ type === 'custom' ? 'Custom' : type.charAt(0).toUpperCase() + type.slice(1) }}
                 </span>
             </div>
+            
+            <Transition name="fade" mode="out-in">
+                <div class="date-nav" v-if="filterType !== 'custom'">
+                    <button @click="shiftDate(-1)" class="nav-arrow">&lt;</button>
+                    <span class="current-date-label">{{ dateDisplay }}</span>
+                    <button @click="shiftDate(1)" class="nav-arrow">&gt;</button>
+                </div>
 
-            <div class="date-nav" v-if="filterType !== 'custom'">
-                <button @click="shiftDate(-1)" class="nav-arrow">&lt;</button>
-                <span class="current-date-label">{{ dateDisplay }}</span>
-                <button @click="shiftDate(1)" class="nav-arrow">&gt;</button>
-            </div>
-
-            <div class="custom-inputs" v-else>
-                <input type="date" v-model="customStart">
-                <span>to</span>
-                <input type="date" v-model="customEnd">
-            </div>
+                <div class="custom-inputs" v-else>
+                    <input type="date" v-model="customStart">
+                    <span>to</span>
+                    <input type="date" v-model="customEnd">
+                </div>
+            </Transition>
 
             <div class="summary-container">
                 <div class="balance-header">
@@ -193,7 +195,8 @@ const goToDetail = (id) => {
 
         <button class="fab" @click="showForm = true">+</button>
 
-        <div v-if="showForm" class="modal-overlay" @click.self="showForm = false">
+        <Transition name="fade">
+            <div v-if="showForm" class="modal-overlay" @click.self="showForm = false">
             <div class="modal-content">
                 <ExpenseForm 
                     @saved="() => { showForm = false; fetchExpenses() }" 
@@ -201,40 +204,43 @@ const goToDetail = (id) => {
                 />
             </div>
         </div>
+        </Transition>
 
         <div class="history-section">
             <div class="list-header">
                 <h4>Transactions</h4>
             </div>
 
-            <div v-for="group in groupedExpenses" :key="group.date" class="date-group">
-                <div class="date-header">
-                    <span class="date-text">{{ group.date }}</span>
-                    <span class="daily-total" :class="group.dayTotal < 0 ? 'red' : 'green'">
-                        {{ group.dayTotal < 0 ? '-' : '+' }}RM {{ Math.abs(group.dayTotal).toFixed(2) }}
-                    </span>
-                </div>
-
-                <div 
-                    v-for="item in group.items" 
-                    :key="item.id" 
-                    class="transaction-item"
-                    @click="goToDetail(item.id)"
-                >
-                    <div class="left-col">
-                        <div class="icon-circle">{{ item.category_icon || 'QA' }}</div>
-                        <div class="text-info">
-                            <span class="item-name">{{ item.category_name || 'General' }}</span>
-                            <span class="item-note">{{ item.description }}</span>
-                        </div>
-                    </div>
-                    <div class="right-col">
-                        <span class="item-amount" :class="item.transaction_type">
-                            {{ item.transaction_type === 'expense' ? '-' : '' }}RM {{ item.amount }}
+            <TransitionGroup name="list" tag="div">
+                <div v-for="group in groupedExpenses" :key="group.date" class="date-group">
+                    <div class="date-header">
+                        <span class="date-text">{{ group.date }}</span>
+                        <span class="daily-total" :class="group.dayTotal < 0 ? 'red' : 'green'">
+                            {{ group.dayTotal < 0 ? '-' : '+' }}RM {{ Math.abs(group.dayTotal).toFixed(2) }}
                         </span>
                     </div>
+
+                    <div 
+                        v-for="item in group.items" 
+                        :key="item.id" 
+                        class="transaction-item"
+                        @click="goToDetail(item.id)"
+                    >
+                        <div class="left-col">
+                            <div class="icon-circle">{{ item.category_icon || 'QA' }}</div>
+                            <div class="text-info">
+                                <span class="item-name">{{ item.category_name || 'General' }}</span>
+                                <span class="item-note">{{ item.description }}</span>
+                            </div>
+                        </div>
+                        <div class="right-col">
+                            <span class="item-amount" :class="item.transaction_type">
+                                {{ item.transaction_type === 'expense' ? '-' : '' }}RM {{ item.amount }}
+                            </span>
+                        </div>
+                    </div>
                 </div>
-            </div>
+            </TransitionGroup>         
             
             <div v-if="filteredList.length === 0" class="empty-state">
                 No records found for this period.
@@ -258,12 +264,13 @@ const goToDetail = (id) => {
 
 /* Filters */
 .filter-bar { display: flex; justify-content: space-between; margin-bottom: 15px; background: #f0f0f0; padding: 4px; border-radius: 10px; }
-.filter-item { flex: 1; text-align: center; padding: 8px 0; font-size: 0.9rem; color: #888; border-radius: 8px; cursor: pointer; transition: all 0.2s; }
-.filter-item.active { background: white; color: black; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+.filter-item { flex: 1; text-align: center; padding: 8px 0; font-size: 0.9rem; color: #888; border-radius: 8px; cursor: pointer; transition: all 0.3s ease; } /* Smoother transition */
+.filter-item.active { background: white; color: black; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.05); transform: scale(1.02); } /* Slight pop */
 
 /* Date Navigation */
 .date-nav { display: flex; justify-content: center; align-items: center; margin-bottom: 20px; gap: 15px; }
-.nav-arrow { background: none; border: none; font-size: 1.5rem; color: #4991de; cursor: pointer; padding: 0 10px; font-weight: bold; }
+.nav-arrow { background: none; border: none; font-size: 1.5rem; color: #4991de; cursor: pointer; padding: 0 10px; font-weight: bold; transition: transform 0.1s; }
+.nav-arrow:active { transform: scale(0.9); }
 .current-date-label { font-weight: 600; font-size: 1rem; color: #333; min-width: 150px; text-align: center; }
 
 /* Custom Inputs */
@@ -287,7 +294,9 @@ const goToDetail = (id) => {
 .daily-total.red { color: #ff4d4d; }
 .daily-total.green { color: #42b983; }
 
-.transaction-item { background: white; padding: 12px 15px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+.transaction-item { background: white; padding: 12px 15px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,0.05); transition: transform 0.1s; }
+.transaction-item:active { transform: scale(0.98); }
+
 .left-col { display: flex; align-items: center; gap: 12px; }
 .icon-circle { width: 40px; height: 40px; background: #f5f5f5; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; }
 .text-info { display: flex; flex-direction: column; }
@@ -300,9 +309,10 @@ const goToDetail = (id) => {
 .empty-state { text-align: center; color: #aaa; margin-top: 30px; }
 
 /* FAB */
-.fab { position: fixed; bottom: 90px; right: 20px; width: 50px; height: 50px; background: #eea838; color: white; border: none; border-radius: 50%; font-size: 1.5rem; box-shadow: 0 4px 12px rgba(238, 168, 56, 0.4); cursor: pointer; z-index: 100; }
+.fab { position: fixed; bottom: 90px; right: 20px; width: 50px; height: 50px; background: #eea838; color: white; border: none; border-radius: 50%; font-size: 1.5rem; box-shadow: 0 4px 12px rgba(238, 168, 56, 0.4); cursor: pointer; z-index: 100; transition: transform 0.2s; }
+.fab:active { transform: scale(0.9); }
 
-/* MODAL STYLES UPDATED: Transparent background, proper centering */
+/* Modal */
 .modal-overlay { 
     position: fixed; 
     top: 0; 
@@ -326,5 +336,38 @@ const goToDetail = (id) => {
     position: relative;
     box-shadow: 0 10px 30px rgba(0,0,0,0.2);
     overflow: hidden;
+}
+
+/* --- ANIMATION STYLES --- */
+
+/* Fade Transition (for Date Nav & Modal) */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+  transform: translateY(-5px);
+}
+
+/* List Transition (for Transactions) */
+.list-move,
+.list-enter-active,
+.list-leave-active {
+  transition: all 0.4s ease;
+}
+
+.list-enter-from,
+.list-leave-to {
+  opacity: 0;
+  transform: translateY(20px);
+}
+
+/* Ensure items leave smoothly without taking up space instantly */
+.list-leave-active {
+  position: absolute;
+  width: 100%;
 }
 </style>
