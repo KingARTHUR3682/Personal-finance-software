@@ -72,8 +72,9 @@ onMounted(() => {
   padding: 10px 0;
   z-index: 1000;
   box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
-  /* Handle iPhone Home Bar */
-  padding-bottom: env(safe-area-inset-bottom);
+  padding-top: 12px;
+  padding-bottom: calc(env(safe-area-inset-bottom) + 15px); 
+  min-height: 85px;
 }
 
 .nav-item {
