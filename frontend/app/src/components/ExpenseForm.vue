@@ -1,13 +1,12 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue'
-import axios from 'axios'
-import { useAuthStore } from '@/stores/auth'
 import { useRouter } from 'vue-router'
+import { useExpenseStore } from '@/stores/expenseStore'
 
 const props = defineProps({ expense: { type: Object, default: null } })
 const emit = defineEmits(['saved', 'close']) // Add 'close' emit
 const router = useRouter()
-const authStore = useAuthStore()
+const expenseStore = useExpenseStore()
 
 const picker = ref(null)
 
@@ -16,7 +15,8 @@ const openPicker = () => {
 }
 
 // --- Data ---
-const categories = ref([])
+const categories = computed(() => expenseStore.categories)
+
 const transactionType = ref('expense') 
 const selectedParentId = ref(null)
 const selectedCategory = ref(null)
@@ -39,10 +39,9 @@ const dateLabel = computed(() => {
 onMounted(async () => {
     try {
         // 1. Fetch Categories
-        const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/categories/`, {
-            headers: { Authorization: `Bearer ${authStore.token}`}
-        })
-        categories.value = response.data
+        if (expenseStore.categories.length === 0) {
+            await expenseStore.fetchInitialData()
+        }
 
         // 2. Checking edit mode
         if (props.expense) {
@@ -111,23 +110,20 @@ const handleSubmit = async () => {
     if (!selectedCategory.value) return alert("Please select a category")
     if (parseFloat(amountStr.value) === 0) return alert("Enter an amount")
 
-    const formData = new FormData()
-    formData.append('transaction_type', transactionType.value)
-    formData.append('category', selectedCategory.value.id)
-    formData.append('amount', amountStr.value)
-    formData.append('description', description.value)
-    formData.append('date', date.value)
-    if (receiptFile.value) formData.append('receipt', receiptFile.value)
+    const expenseData = {
+        transaction_type: transactionType.value,
+        category: selectedCategory.value.id,
+        category_name: selectedCategory.value.name, 
+        category_icon: selectedCategory.value.icon,
+        amount: amountStr.value,
+        description: description.value,
+        date: date.value
+    }
 
     try {
-        const url = `${import.meta.env.VITE_API_URL}/api/expenses/`
-        const config = { headers: { Authorization: `Bearer ${authStore.token}` }}
-        
-        if (props.expense) await axios.put(`${url}${props.expense.id}/`, formData, config)
-        else await axios.post(url, formData, config)
-        
+        await expenseStore.addExpense(expenseData, receiptFile.value)
         emit('saved')
-    } catch (error) {
+    } catch(error) {
         alert("Failed to save record.")
         console.error("Error saving record: ", error)
     }

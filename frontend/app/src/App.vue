@@ -1,9 +1,24 @@
 <script setup>
+import { onMounted } from 'vue'
 import { RouterView } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { useExpenseStore } from './stores/expenseStore'
 
 const authStore = useAuthStore()
+const expenseStore = useExpenseStore()
 
+onMounted(() => {
+    // 1. Try to sync pending items immediately when app opens
+    expenseStore.processQueue()
+
+    // 2. Listen for "Internet Restored" event
+    // This happens when toggle Airplane mode OFF or reconnect to WiFi
+    window.addEventListener('online', () => {
+        console.log("Back online! Syncing data...")
+        expenseStore.processQueue()     // Upload queued offline items
+        expenseStore.fetchInitialData() // Fetch latest data from server
+    })
+})
 </script>
 
 <template>
@@ -31,21 +46,19 @@ const authStore = useAuthStore()
 
 <style scoped>
 .content-area {
-  padding-bottom: 80px; /* Space for bottom nav */
+  padding-bottom: 80px; 
   min-height: 100vh;
 }
 
-/* Add these CSS classes for a smooth fade transition */
 .fade-enter-active,
 .fade-leave-active {
-  transition: opacity 0.3s ease; /* Adjust duration (e.g., 0.3s) and timing function as needed */
+  transition: opacity 0.3s ease;
 }
 
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0;
 }
-/* End of transition styles */
 
 .bottom-nav {
   position: fixed;
@@ -59,6 +72,8 @@ const authStore = useAuthStore()
   padding: 10px 0;
   z-index: 1000;
   box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
+  /* Handle iPhone Home Bar */
+  padding-bottom: env(safe-area-inset-bottom);
 }
 
 .nav-item {
@@ -67,9 +82,10 @@ const authStore = useAuthStore()
   align-items: center;
   color: #999;
   font-size: 0.8rem;
+  text-decoration: none;
 }
 
 .nav-item.router-link-active {
-  color: #eea838; /* Yellow accent */
+  color: #eea838;
 }
 </style>

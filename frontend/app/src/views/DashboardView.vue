@@ -1,14 +1,12 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue'
-import axios from 'axios'
 import { useRouter } from 'vue-router'
-import { useAuthStore } from '@/stores/auth'
+import { useExpenseStore } from '@/stores/expenseStore'
 import ExpenseForm from '@/components/ExpenseForm.vue'
 
-const authStore = useAuthStore()
+const expenseStore = useExpenseStore()
 const router = useRouter()
-const expenses = ref([])
-const loading = ref(false)
+const expenses = computed(() => expenseStore.expenses)
 const showForm = ref(false)
 
 // --- 1. State for Date Navigation ---
@@ -17,22 +15,9 @@ const currentDate = ref(new Date()) // Tracks the currently selected date
 const customStart = ref(new Date().toISOString().split('T')[0])
 const customEnd = ref(new Date().toISOString().split('T')[0])
 
-const fetchExpenses = async () => {
-    loading.value = true
-    try {
-        // Use your actual IP here
-        const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/expenses/`, {
-            headers: { Authorization: `Bearer ${authStore.token}` }
-        })
-        expenses.value = response.data
-    } catch(error) {
-        console.error(error)
-    } finally {
-        loading.value = false
-    }
-}
-
-onMounted(fetchExpenses)
+onMounted(() => {
+    expenseStore.fetchInitialData()
+})
 
 // --- 2. Helper Functions for Date Ranges ---
 const getStartOfWeek = (date) => {
@@ -76,7 +61,7 @@ const dateDisplay = computed(() => {
     return 'Custom Range'
 })
 
-// --- 4. Fixed Filter Logic ---
+// --- 4. Filter Logic ---
 const filteredList = computed(() => {
     return expenses.value.filter(exp => {
         const expDate = new Date(exp.date)
@@ -199,7 +184,7 @@ const goToDetail = (id) => {
             <div v-if="showForm" class="modal-overlay" @click.self="showForm = false">
             <div class="modal-content">
                 <ExpenseForm 
-                    @saved="() => { showForm = false; fetchExpenses() }" 
+                    @saved="showForm = false" 
                     @close="showForm = false"
                 />
             </div>
@@ -237,6 +222,7 @@ const goToDetail = (id) => {
                             <span class="item-amount" :class="item.transaction_type">
                                 {{ item.transaction_type === 'expense' ? '-' : '' }}RM {{ item.amount }}
                             </span>
+                            <span v-if="item.isPending" style="font-size:0.7rem; color:orange; display:block; text-align:right;">⏳</span>
                         </div>
                     </div>
                 </div>
